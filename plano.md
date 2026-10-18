@@ -164,6 +164,7 @@ Estados: `idle`, `walk_fwd`, `walk_back`, `jump`, `crouch`, `block`, `attack`, `
 | `node:test` para o input buffer | Sem dependências, cobre a parte mais frágil | Sem testes |
 | Servidor local via `python -m http.server` | Node ainda não instalado na máquina; Python já disponível. Node entra antes da Etapa 7 | `npx serve` (requer Node) |
 | Fonte "Press Start 2P" (Google Fonts) com fallback `monospace` e timeout de 1,5 s | Visual pixel imediato sem desenhar fonte bitmap; não bloqueia o boot offline | Fonte bitmap própria (pode vir na Etapa 10) |
+| `render/sprites.js` antecipado para a Etapa 2; placeholders gerados também pré-espelhados | Necessário para exibir o sprite de teste; o texto do placeholder não sai invertido quando o lutador olha para a esquerda | Espelhar tudo via `scale(-1,1)` (texto ilegível) |
 
 Observação: módulos ES não funcionam abrindo `index.html` direto (`file://`); usar `npx serve` ou `python -m http.server`.
 
@@ -187,11 +188,11 @@ Regras para **todas** as etapas: rodar e testar no navegador, atualizar os check
 
 ### Etapa 2 — Pipeline de pixel art
 **Objetivo:** render offscreen 480×270, escala inteira, loader com fallback.
-- [ ] `core/renderer.js` com canvas offscreen e ampliação com escala inteira e barras
-- [ ] Redimensionar a janela mantém pixels nítidos e proporção
-- [ ] `core/assets.js` carrega PNG/JSON; falha cai no placeholder
-- [ ] `render/placeholders.js` gera um sprite de teste com texto
-- [ ] `palette.js` inicial
+- [x] `core/renderer.js` com canvas offscreen e ampliação com escala inteira e barras
+- [x] Redimensionar a janela mantém pixels nítidos e proporção
+- [x] `core/assets.js` carrega PNG/JSON; falha cai no placeholder
+- [x] `render/placeholders.js` gera um sprite de teste com texto
+- [x] `palette.js` inicial
 
 **Arquivos:** `core/renderer.js`, `core/assets.js`, `render/placeholders.js`, `palette.js`
 **Aceite:** um sprite placeholder aparece nítido; ao redimensionar a janela, a escala muda só em múltiplos inteiros; se eu colocar um PNG com o nome certo em `assets/`, ele substitui o placeholder após recarregar.

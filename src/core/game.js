@@ -8,8 +8,12 @@ import {
   TITLE_BLINK_FRAMES,
   ENTER_FEEDBACK_FRAMES,
   ENTER_FLASH_FRAMES,
+  ENTER_SHAKE_INTENSITY,
+  ENTER_SHAKE_FRAMES,
   TITLE_FIREFLIES,
 } from '../config.js';
+import { PALETTE as P } from '../palette.js';
+import { Animation } from '../render/sprites.js';
 
 export const GameState = Object.freeze({
   TITLE: 'TITLE',
@@ -21,33 +25,16 @@ export const GameState = Object.freeze({
   PAUSED: 'PAUSED',
 });
 
-// Cores provisórias — migram para palette.js na Etapa 2.
-const COLORS = {
-  skyTop: '#04110b',
-  skyMid: '#0b2a1b',
-  skyBottom: '#1b4a2c',
-  ground: '#071a10',
-  title: '#ffd166',
-  titleOutline: '#3a1c05',
-  titleGlow: 'rgba(255, 140, 40, 0.85)',
-  combat: '#ff5d3a',
-  combatOutline: '#2a0a04',
-  subtitle: '#9fe3b5',
-  prompt: '#e8f5e9',
-  firefly: '#d8ff7a',
-  fireflyGlow: 'rgba(200, 255, 100, 0.6)',
-  debug: '#7cffb2',
-  debugBg: 'rgba(0, 0, 0, 0.6)',
-};
-
 const FONT = '"Press Start 2P", monospace';
 
 export class Game {
-  /** @param {HTMLCanvasElement} canvas */
-  constructor(canvas) {
-    this.canvas = canvas;
-    this.ctx = canvas.getContext('2d');
-    this.ctx.imageSmoothingEnabled = false;
+  /**
+   * @param {import('./renderer.js').Renderer} renderer
+   * @param {import('./assets.js').Assets} assets
+   */
+  constructor(renderer, assets) {
+    this.renderer = renderer;
+    this.assets = assets;
 
     this.frame = 0; // ticks lógicos desde o início
     this.debug = DEBUG_DEFAULT;
@@ -85,31 +72,42 @@ export class Game {
   update() {
     if (this.wasPressed('F1')) this.debug = !this.debug;
     this.state.update();
+    this.renderer.update();
     this.frame++;
     this._pressed.clear();
   }
 
   render() {
-    const ctx = this.ctx;
+    const r = this.renderer;
+    r.beginFrame();
+    const ctx = r.ctx;
     ctx.save();
     this.state.render(ctx);
     ctx.restore();
     if (this.debug) this._renderDebug(ctx);
+    r.present();
   }
 
   _renderDebug(ctx) {
+    const r = this.renderer;
+    const a = this.assets.summary();
+    const scale = Number.isInteger(r.scale) ? `${r.scale}x` : `${r.scale.toFixed(2)}x`;
     const lines = [
       `ticks/s ${this.loop?.ticksPerSecond ?? 0}`,
       `fps     ${this.loop?.framesPerSecond ?? 0}`,
       `estado  ${this.stateName}`,
       `frame   ${this.frame}`,
+      `escala  ${scale} dpr ${r.dpr}`,
+      `tela    ${r.canvas.width}x${r.canvas.height}`,
+      `sprites png ${a.png} ph ${a.placeholder}`,
     ];
     ctx.save();
-    ctx.fillStyle = COLORS.debugBg;
-    ctx.fillRect(2, 2, 116, lines.length * 10 + 6);
+    ctx.fillStyle = P.debugBg;
+    ctx.fillRect(2, 2, 196, lines.length * 10 + 6);
     ctx.font = `8px ${FONT}`;
+    ctx.textAlign = 'left';
     ctx.textBaseline = 'top';
-    ctx.fillStyle = COLORS.debug;
+    ctx.fillStyle = P.debug;
     lines.forEach((l, i) => ctx.fillText(l, 6, 6 + i * 10));
     ctx.restore();
   }
@@ -126,11 +124,14 @@ export class Game {
 // ---------------------------------------------------------------------------
 // Estado TITLE
 // ---------------------------------------------------------------------------
+const TITLE_FIGHTER_Y = H - 18; // pés dos lutadores de demonstração
+const TITLE_SACI_X = 64;
+const TITLE_CURUPIRA_X = W - 64;
+
 class TitleState {
   constructor(game) {
     this.game = game;
     this.feedback = 0;
-    this.flash = 0;
     // Vaga-lumes determinísticos: parâmetros fixos derivados do índice.
     this.fireflies = Array.from({ length: TITLE_FIREFLIES }, (_, i) => ({
       x: ((i * 97) % W) + 10,
@@ -141,11 +142,15 @@ class TitleState {
       sy: 0.017 + (i % 4) * 0.004,
       phase: i * 1.7,
     }));
+    // Lutadores de demonstração (testam o pipeline de sprites/placeholders).
+    const saci = game.assets.get('saci/idle');
+    const curupira = game.assets.get('curupira/idle');
+    this.saciAnim = saci ? new Animation(saci) : null;
+    this.curupiraAnim = curupira ? new Animation(curupira) : null;
   }
 
   enter() {
     this.feedback = 0;
-    this.flash = 0;
   }
 
   update() {
@@ -153,10 +158,12 @@ class TitleState {
     if (g.wasPressed('Enter') || g.wasPressed('NumpadEnter')) {
       // Próximo estado (CHAR_SELECT) chega em etapas futuras.
       this.feedback = ENTER_FEEDBACK_FRAMES;
-      this.flash = ENTER_FLASH_FRAMES;
+      g.renderer.flash(P.flashWhite, ENTER_FLASH_FRAMES);
+      g.renderer.shake(ENTER_SHAKE_INTENSITY, ENTER_SHAKE_FRAMES);
     }
     if (this.feedback > 0) this.feedback--;
-    if (this.flash > 0) this.flash--;
+    this.saciAnim?.update();
+    this.curupiraAnim?.update();
   }
 
   render(ctx) {
@@ -164,18 +171,22 @@ class TitleState {
 
     // Céu
     const sky = ctx.createLinearGradient(0, 0, 0, H);
-    sky.addColorStop(0, COLORS.skyTop);
-    sky.addColorStop(0.6, COLORS.skyMid);
-    sky.addColorStop(1, COLORS.skyBottom);
+    sky.addColorStop(0, P.skyTop);
+    sky.addColorStop(0.6, P.skyMid);
+    sky.addColorStop(1, P.skyBottom);
     ctx.fillStyle = sky;
     ctx.fillRect(0, 0, W, H);
 
     // Silhueta de mata (determinística)
-    ctx.fillStyle = COLORS.ground;
+    ctx.fillStyle = P.forestDark;
     for (let x = 0; x < W; x += 6) {
       const h = 22 + Math.round(10 * Math.sin(x * 0.05) + 6 * Math.sin(x * 0.13 + 1.3));
       ctx.fillRect(x, H - h, 6, h);
     }
+
+    // Lutadores de demonstração, um de frente para o outro
+    this.saciAnim?.draw(ctx, TITLE_SACI_X, TITLE_FIGHTER_Y, false);
+    this.curupiraAnim?.draw(ctx, TITLE_CURUPIRA_X, TITLE_FIGHTER_Y, true);
 
     // Vaga-lumes
     ctx.save();
@@ -185,9 +196,9 @@ class TitleState {
       const y = Math.round(ff.y + Math.cos(f * ff.sy + ff.phase) * ff.ay);
       const pulse = 0.5 + 0.5 * Math.sin(f * 0.08 + ff.phase);
       ctx.globalAlpha = 0.25 + 0.75 * pulse;
-      ctx.fillStyle = COLORS.fireflyGlow;
+      ctx.fillStyle = P.fireflyGlow;
       ctx.fillRect(x - 1, y - 1, 3, 3);
-      ctx.fillStyle = COLORS.firefly;
+      ctx.fillStyle = P.firefly;
       ctx.fillRect(x, y, 1, 1);
     }
     ctx.restore();
@@ -196,27 +207,21 @@ class TitleState {
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     const glow = 6 + Math.round(4 * (0.5 + 0.5 * Math.sin(f * 0.05)));
-    drawOutlinedText(ctx, 'ANTROPOFÁGICO', W / 2, 92, 20, COLORS.title, COLORS.titleOutline, COLORS.titleGlow, glow);
-    drawOutlinedText(ctx, 'COMBAT', W / 2, 124, 28, COLORS.combat, COLORS.combatOutline, COLORS.titleGlow, glow);
+    drawOutlinedText(ctx, 'ANTROPOFÁGICO', W / 2, 92, 20, P.title, P.titleOutline, P.titleGlow, glow);
+    drawOutlinedText(ctx, 'COMBAT', W / 2, 124, 28, P.combat, P.combatOutline, P.titleGlow, glow);
 
     ctx.font = `8px ${FONT}`;
-    ctx.fillStyle = COLORS.subtitle;
+    ctx.fillStyle = P.subtitle;
     ctx.fillText('folclore brasileiro • protótipo', W / 2, 152);
 
     // Prompt / feedback
     if (this.feedback > 0) {
-      ctx.fillStyle = COLORS.title;
+      ctx.fillStyle = P.title;
       ctx.fillText('Em breve: seleção de personagem', W / 2, 200);
     } else if (Math.floor(f / TITLE_BLINK_FRAMES) % 2 === 0) {
       ctx.font = `10px ${FONT}`;
-      ctx.fillStyle = COLORS.prompt;
+      ctx.fillStyle = P.prompt;
       ctx.fillText('Pressione ENTER', W / 2, 200);
-    }
-
-    // Flash
-    if (this.flash > 0) {
-      ctx.fillStyle = `rgba(255,255,255,${(this.flash / ENTER_FLASH_FRAMES) * 0.6})`;
-      ctx.fillRect(0, 0, W, H);
     }
   }
 }
