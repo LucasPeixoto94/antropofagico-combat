@@ -18,10 +18,28 @@ Depois abra <http://localhost:8000>.
 
 ## Controles
 
+### Geral
 | Tecla | Ação |
 |---|---|
-| ENTER | Confirmar (por enquanto só mostra um aviso, com flash e tremor) |
-| F1 | Liga/desliga o modo debug (ticks/s, fps, estado, frame, escala, sprites) |
+| ENTER | Iniciar modo de treino (na tela de título) |
+| ESC | Voltar para o menu principal |
+| F1 | Liga/desliga overlay de debug (ticks/s, fps, estado, coordenadas, câmera) |
+
+### Jogador 1 (Saci)
+| Tecla | Ação |
+|---|---|
+| W | Pular (vertical ou diagonal) |
+| S | Agachar |
+| A | Andar para esquerda |
+| D | Andar para direita |
+
+### Jogador 2 (Curupira / Boneco de treino)
+| Tecla | Ação |
+|---|---|
+| Seta Cima | Pular |
+| Seta Baixo | Agachar |
+| Seta Esquerda | Andar para esquerda |
+| Seta Direita | Andar para direita |
 
 ## Sprites: trocar placeholders por PNG
 

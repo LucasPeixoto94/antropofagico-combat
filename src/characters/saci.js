@@ -1,0 +1,16 @@
+// Saci — dados do personagem. O código de fighter.js é genérico; aqui só há dados.
+import { CHARACTER_STATS } from '../config.js';
+
+export default Object.freeze({
+  id: 'saci',
+  name: 'SACI',
+  stats: CHARACTER_STATS.saci,
+  // Animações por estado (spritesheet assets/characters/saci/<estado>.png).
+  animations: Object.freeze({
+    idle: { frames: 6, fps: 8, loop: true },
+    walk_fwd: { frames: 6, fps: 12, loop: true },
+    walk_back: { frames: 6, fps: 10, loop: true },
+    jump: { frames: 4, fps: 8, loop: false },
+    crouch: { frames: 2, fps: 12, loop: false },
+  }),
+});

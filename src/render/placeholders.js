@@ -1,6 +1,13 @@
 // Gera spritesheets procedurais (placeholders) com o MESMO tamanho dos sprites finais.
 // Cada frame: silhueta colorida do personagem + nome do estado e nº do frame.
 import { PALETTE as P } from '../palette.js';
+import { CROUCH_HEIGHT_RATIO } from '../config.js';
+
+const LEG_RATIO = 0.38;
+/** Tronco (0,34) + cabeça (0,2), em fração da altura. */
+const UPPER_RATIO = 0.54;
+/** Deslocamento das pernas por frame ao andar. */
+const WALK_SWING = [-3, -1, 1, 3, 1, -1];
 
 const FONT = '"Press Start 2P", monospace';
 
@@ -27,10 +34,11 @@ export function generatePlaceholderSheet(o, flipped = false) {
   const pivotX = flipped ? o.frameWidth - o.pivot.x : o.pivot.x;
   for (let i = 0; i < o.frames; i++) {
     const ox = i * o.frameWidth;
-    let rects = buildFigure(o.kind || 'generic', o.height, i, o.frames);
+    let rects = buildFigure(o.kind || 'generic', o.height, i, o.frames, o.pose);
     if (flipped) rects = rects.map((q) => ({ ...q, x: -q.x - q.w }));
     drawRects(ctx, rects, ox + pivotX, o.pivot.y);
-    drawLabel(ctx, `${o.state} ${i}`, ox + o.frameWidth / 2, o.pivot.y - o.height - 8);
+    const top = Math.min(...rects.map((q) => q.y));
+    drawLabel(ctx, `${o.state} ${i}`, ox + o.frameWidth / 2, o.pivot.y + top - 8);
   }
   return canvas;
 }
@@ -61,11 +69,17 @@ const r = (x, y, w, h, c) => ({ x: Math.round(x), y: Math.round(y), w: Math.roun
 
 /**
  * Monta a silhueta em coordenadas relativas ao pivô (pés no 0,0; y cresce para baixo; olhando para a direita).
+ * pose: 'idle' | 'walk_fwd' | 'walk_back' | 'jump' | 'crouch'
  */
-function buildFigure(kind, h, frame, frames) {
+function buildFigure(kind, h, frame, frames, pose = 'idle') {
   // Respiração: corpo sobe 1 px na metade do ciclo.
   const bob = Math.sin((frame / frames) * Math.PI * 2) > 0 ? -1 : 0;
-  const legH = h * 0.38;
+  // Pernas: no agachado encolhem até a altura total bater com CROUCH_HEIGHT_RATIO.
+  const legScale = pose === 'crouch' ? (CROUCH_HEIGHT_RATIO - UPPER_RATIO) / LEG_RATIO
+    : pose === 'jump' ? 0.6 : 1;
+  const isWalk = pose === 'walk_fwd' || pose === 'walk_back';
+  const swing = isWalk ? WALK_SWING[frame % WALK_SWING.length] * (pose === 'walk_back' ? -1 : 1) : 0;
+  const legH = h * LEG_RATIO * legScale;
   const torsoH = h * 0.34;
   const headS = Math.round(h * 0.2);
   const torsoW = Math.round(h * 0.24);
@@ -76,7 +90,7 @@ function buildFigure(kind, h, frame, frames) {
     const legW = Math.round(h * 0.08);
     return [
       // Uma perna só
-      r(-legW / 2, -legH, legW, legH, P.saciSkin),
+      r(-legW / 2 + swing, -legH, legW, legH, P.saciSkin),
       // Bermuda
       r(-torsoW / 2, -legH - 8 + bob, torsoW, 10, P.saciShorts),
       // Tronco
@@ -104,12 +118,12 @@ function buildFigure(kind, h, frame, frames) {
       return r(fx, headY - fh + 2, headS / 5, fh, (frame + k) % 2 ? P.curupiraHair : P.curupiraHairHot);
     });
     return [
-      // Duas pernas
-      r(-gap - legW, -legH, legW, legH, P.curupiraSkin),
-      r(gap, -legH, legW, legH, P.curupiraShade),
+      // Duas pernas (alternam ao andar)
+      r(-gap - legW + swing, -legH, legW, legH, P.curupiraSkin),
+      r(gap - swing, -legH, legW, legH, P.curupiraShade),
       // Pés virados para TRÁS (apontam para a esquerda quando olha para a direita)
-      r(-gap - legW - 8, -4, 8 + legW, 4, P.curupiraSkin),
-      r(gap - 8, -4, 8 + legW, 4, P.curupiraShade),
+      r(-gap - legW - 8 + swing, -4, 8 + legW, 4, P.curupiraSkin),
+      r(gap - 8 - swing, -4, 8 + legW, 4, P.curupiraShade),
       // Tanga
       r(-torsoW / 2, -legH - 6 + bob, torsoW, 10, P.curupiraLoincloth),
       // Tronco

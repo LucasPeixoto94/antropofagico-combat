@@ -7,6 +7,12 @@ export const PALETTE = Object.freeze({
   skyBottom: '#1b4a2c',
   forestDark: '#071a10',
   forestMid: '#0f3320',
+  mountain: '#123222',
+  groundTop: '#4a7a3a',
+  groundDark: '#1a3318',
+  marker: '#3d6b45',
+  markerText: '#8fbf96',
+  hint: '#cfe8d3',
 
   // Título
   title: '#ffd166',

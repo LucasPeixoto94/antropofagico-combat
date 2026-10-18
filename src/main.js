@@ -8,8 +8,8 @@ import {
   CHAR_FRAME_WIDTH,
   CHAR_FRAME_HEIGHT,
   CHAR_PIVOT,
-  CHARACTER_STATS,
 } from './config.js';
+import { CHARACTERS } from './characters/index.js';
 
 async function waitForFont() {
   if (!document.fonts || !document.fonts.load) return;
@@ -21,22 +21,25 @@ async function waitForFont() {
   }
 }
 
-/** Sprites usados até agora. A partir da Etapa 3 a lista vem dos dados dos personagens. */
+/** Todos os sprites de todos os personagens, a partir dos dados em characters/*.js. */
 function spriteManifest() {
-  const idle = (id, name) => ({
-    key: `${id}/idle`,
-    base: `assets/characters/${id}/idle`,
-    spec: {
-      frameWidth: CHAR_FRAME_WIDTH,
-      frameHeight: CHAR_FRAME_HEIGHT,
-      frames: 6,
-      fps: 8,
-      loop: true,
-      pivot: { ...CHAR_PIVOT },
-      placeholder: { name, state: 'idle', kind: id, height: CHARACTER_STATS[id].height },
-    },
-  });
-  return [idle('saci', 'SACI'), idle('curupira', 'CURUPIRA')];
+  const list = [];
+  for (const def of Object.values(CHARACTERS)) {
+    for (const [state, anim] of Object.entries(def.animations)) {
+      list.push({
+        key: `${def.id}/${state}`,
+        base: `assets/characters/${def.id}/${state}`,
+        spec: {
+          frameWidth: CHAR_FRAME_WIDTH,
+          frameHeight: CHAR_FRAME_HEIGHT,
+          pivot: { ...CHAR_PIVOT },
+          ...anim,
+          placeholder: { name: def.name, state, kind: def.id, height: def.stats.height, pose: state },
+        },
+      });
+    }
+  }
+  return list;
 }
 
 async function boot() {

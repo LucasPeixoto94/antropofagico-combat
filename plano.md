@@ -165,6 +165,7 @@ Estados: `idle`, `walk_fwd`, `walk_back`, `jump`, `crouch`, `block`, `attack`, `
 | Servidor local via `python -m http.server` | Node ainda não instalado na máquina; Python já disponível. Node entra antes da Etapa 7 | `npx serve` (requer Node) |
 | Fonte "Press Start 2P" (Google Fonts) com fallback `monospace` e timeout de 1,5 s | Visual pixel imediato sem desenhar fonte bitmap; não bloqueia o boot offline | Fonte bitmap própria (pode vir na Etapa 10) |
 | `render/sprites.js` antecipado para a Etapa 2; placeholders gerados também pré-espelhados | Necessário para exibir o sprite de teste; o texto do placeholder não sai invertido quando o lutador olha para a esquerda | Espelhar tudo via `scale(-1,1)` (texto ilegível) |
+| Estados modulares em `src/states/` e enum em `src/core/gameState.js` | Evita dependência circular e mantém game.js enxuto conforme novos estados forem adicionados | Tudo concentrado em game.js |
 
 Observação: módulos ES não funcionam abrindo `index.html` direto (`file://`); usar `npx serve` ou `python -m http.server`.
 
@@ -200,11 +201,11 @@ Regras para **todas** as etapas: rodar e testar no navegador, atualizar os check
 
 ### Etapa 3 — Um lutador (placeholder)
 **Objetivo:** andar, pular, agachar e virar para o oponente.
-- [ ] `core/input.js` (teclado P1 e P2, ações lógicas)
-- [ ] `fight/fighter.js` com estados `idle`, `walk_*`, `jump`, `crouch`
-- [ ] Gravidade, chão, limites do cenário
-- [ ] Um "boneco de treino" parado para o lutador virar para ele
-- [ ] `core/camera.js` básica
+- [x] `core/input.js` (teclado P1 e P2, ações lógicas)
+- [x] `fight/fighter.js` com estados `idle`, `walk_*`, `jump`, `crouch`
+- [x] Gravidade, chão, limites do cenário
+- [x] Um "boneco de treino" parado para o lutador virar para ele
+- [x] `core/camera.js` básica
 
 **Arquivos:** `core/input.js`, `fight/fighter.js`, `core/camera.js`, `characters/saci.js` (parcial)
 **Aceite:** o Saci anda, pula (altura/duração conforme config), agacha e sempre fica de frente para o boneco; não sai do cenário.

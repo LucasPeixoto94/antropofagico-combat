@@ -54,10 +54,9 @@ export class Assets {
    */
   async loadSprite(key, base, spec) {
     const { placeholder, ...defaults } = spec;
-    const [json, image] = await Promise.all([
-      loadJson(`${base}.json`),
-      loadImage(`${base}.png`).catch(() => null),
-    ]);
+    const image = await loadImage(`${base}.png`).catch(() => null);
+    // O JSON só faz sentido junto de um PNG (evita 404 extra para cada placeholder).
+    const json = image ? await loadJson(`${base}.json`) : null;
 
     /** @type {Sprite} */
     let sprite;
