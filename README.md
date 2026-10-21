@@ -23,23 +23,26 @@ Depois abra <http://localhost:8000>.
 |---|---|
 | ENTER | Iniciar modo de treino (na tela de título) |
 | ESC | Voltar para o menu principal |
-| F1 | Liga/desliga overlay de debug (ticks/s, fps, estado, coordenadas, câmera) |
+| F1 | Liga/desliga debug: estado, frames do golpe, hp, hurtbox (verde) e hitbox (vermelha, só nos frames *active*) |
 
 ### Jogador 1 (Saci)
 | Tecla | Ação |
 |---|---|
-| W | Pular (vertical ou diagonal) |
-| S | Agachar |
-| A | Andar para esquerda |
-| D | Andar para direita |
+| W / S | Pular / agachar |
+| A / D | Andar para esquerda / direita |
+| F | Soco |
+| G | Chute |
+| H | Defesa (segurar) |
 
-### Jogador 2 (Curupira / Boneco de treino)
+### Jogador 2 (Curupira / boneco de treino)
 | Tecla | Ação |
 |---|---|
-| Seta Cima | Pular |
-| Seta Baixo | Agachar |
-| Seta Esquerda | Andar para esquerda |
-| Seta Direita | Andar para direita |
+| Setas | Andar, pular (cima), agachar (baixo) |
+| J (ou Num 1) | Soco |
+| K (ou Num 2) | Chute |
+| L (ou Num 3) | Defesa (segurar) |
+
+Golpes mudam com a posição: em pé, **agachado** (segurando ↓) e **no ar** (durante o pulo). O chute agachado derruba (rasteira).
 
 ## Sprites: trocar placeholders por PNG
 

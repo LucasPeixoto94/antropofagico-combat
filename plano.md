@@ -166,6 +166,8 @@ Estados: `idle`, `walk_fwd`, `walk_back`, `jump`, `crouch`, `block`, `attack`, `
 | Fonte "Press Start 2P" (Google Fonts) com fallback `monospace` e timeout de 1,5 s | Visual pixel imediato sem desenhar fonte bitmap; não bloqueia o boot offline | Fonte bitmap própria (pode vir na Etapa 10) |
 | `render/sprites.js` antecipado para a Etapa 2; placeholders gerados também pré-espelhados | Necessário para exibir o sprite de teste; o texto do placeholder não sai invertido quando o lutador olha para a esquerda | Espelhar tudo via `scale(-1,1)` (texto ilegível) |
 | Estados modulares em `src/states/` e enum em `src/core/gameState.js` | Evita dependência circular e mantém game.js enxuto conforme novos estados forem adicionados | Tudo concentrado em game.js |
+| Frame data dos golpes básicos em `config.js` (`BASIC_MOVES`), com sobrescrita opcional por personagem (`moves` em `characters/*.js`) | Segue a regra "balanceamento só em config.js" e a tabela da seção 6; especiais (Etapa 7) entram nos arquivos dos personagens | Frame data só nos arquivos dos personagens (espalharia números) |
+| Defesa bloqueia qualquer golpe (sem guarda alta/baixa) e só no chão | Mantém o escopo simples do protótipo; guarda alta/baixa seria um sistema extra | Guarda alta/baixa (fora do escopo) |
 
 Observação: módulos ES não funcionam abrindo `index.html` direto (`file://`); usar `npx serve` ou `python -m http.server`.
 
@@ -213,11 +215,11 @@ Regras para **todas** as etapas: rodar e testar no navegador, atualizar os check
 
 ### Etapa 4 — Golpes básicos e colisão
 **Objetivo:** soco, chute e defesa com frame data e hitboxes; debug.
-- [ ] `fight/moves.js` (startup/active/recovery) e `fight/collision.js`
-- [ ] Soco e chute em pé, agachado e no ar
-- [ ] Defesa
-- [ ] Hitstop, knockback, hitstun, blockstun
-- [ ] `debug/debugOverlay.js` (F1): hitboxes, hurtboxes, estado, frame, inputs
+- [x] `fight/moves.js` (startup/active/recovery) e `fight/collision.js`
+- [x] Soco e chute em pé, agachado e no ar
+- [x] Defesa
+- [x] Hitstop, knockback, hitstun, blockstun
+- [x] `debug/debugOverlay.js` (F1): hitboxes, hurtboxes, estado, frame, inputs
 
 **Arquivos:** `fight/moves.js`, `fight/collision.js`, `debug/debugOverlay.js`, `config.js`
 **Aceite:** com F1 ligado, vejo hitbox (vermelho) só nos frames *active* e hurtbox (verde); acertar o boneco gera hitstop, empurrão e tremor; um golpe acerta uma única vez por execução.

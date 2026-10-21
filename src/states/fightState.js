@@ -1,6 +1,6 @@
-// Estado FIGHTING (Etapa 3: modo treino).
-// Saci (P1) vs Curupira como boneco de treino — fica parado, a menos que o P2 use as setas.
-// Rounds, vida e pausa entram nas Etapas 5–6.
+// Estado FIGHTING (Etapa 4: modo treino com golpes).
+// Saci (P1) vs Curupira como boneco de treino — fica parado, a menos que o P2 use as teclas.
+// Rounds, vida na tela e pausa entram nas Etapas 5–6.
 import {
   INTERNAL_WIDTH as W,
   INTERNAL_HEIGHT as H,
@@ -10,13 +10,18 @@ import {
   STAGE_EDGE_MARGIN,
   SCREEN_EDGE_MARGIN,
   FIGHTER_START_OFFSET,
+  HITSTOP_FRAMES,
+  HIT_SHAKE_INTENSITY,
+  HIT_SHAKE_FRAMES,
 } from '../config.js';
 import { PALETTE as P } from '../palette.js';
 import { GameState } from '../core/gameState.js';
 import { Camera } from '../core/camera.js';
 import { Fighter } from '../fight/fighter.js';
+import { overlaps } from '../fight/collision.js';
 import { CHARACTERS } from '../characters/index.js';
 import { FONT } from '../render/text.js';
+import { drawFighterBoxes } from '../debug/debugOverlay.js';
 
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
 
@@ -29,9 +34,9 @@ function constrainFighters(a, b) {
   const right = left === a ? b : a;
   const excess = right.x - left.x - maxSep;
   if (excess > 0) {
-    // Quem estava se afastando é quem recua.
-    const lOut = Math.max(0, -left.vx);
-    const rOut = Math.max(0, right.vx);
+    // Quem estava se afastando (andando ou sendo empurrado) é quem recua.
+    const lOut = Math.max(0, -(left.vx + left.kb));
+    const rOut = Math.max(0, right.vx + right.kb);
     const total = lOut + rOut;
     const lShare = total > 0 ? lOut / total : 0.5;
     left.x += excess * lShare;
@@ -42,6 +47,8 @@ function constrainFighters(a, b) {
 export class FightState {
   constructor(game) {
     this.game = game;
+    this.hitstop = 0;
+    this.lastEvent = '-';
   }
 
   enter() {
@@ -51,6 +58,8 @@ export class FightState {
     this.p2 = new Fighter({ def: CHARACTERS.curupira, assets: g.assets, x: mid + FIGHTER_START_OFFSET, facing: -1 });
     this.camera = new Camera();
     this.camera.snap(this.p1, this.p2);
+    this.hitstop = 0;
+    this.lastEvent = '-';
   }
 
   update() {
@@ -60,10 +69,44 @@ export class FightState {
       g.setState(GameState.TITLE);
       return;
     }
+
+    if (this.hitstop > 0) {
+      // Hitstop: lógica dos lutadores congelada; câmera e tremor de tela continuam.
+      this.hitstop--;
+      this.camera.update(this.p1, this.p2);
+      return;
+    }
+
     this.p1.update(g.input.actions(0), this.p2);
     this.p2.update(g.input.actions(1), this.p1);
+    this._resolveHits();
     constrainFighters(this.p1, this.p2);
     this.camera.update(this.p1, this.p2);
+  }
+
+  /** Detecta acertos deste tick. Os dois golpes são avaliados antes de aplicar qualquer um (trade). */
+  _resolveHits() {
+    const hits = [];
+    for (const [att, def] of [[this.p1, this.p2], [this.p2, this.p1]]) {
+      if (att.hasHit) continue;
+      const hitbox = att.currentHitbox();
+      const hurtbox = def.hurtbox();
+      if (hitbox && hurtbox && overlaps(hitbox, hurtbox)) {
+        // O golpe é capturado agora: o atacante pode ser interrompido por um trade.
+        hits.push({ att, def, move: att.move });
+      }
+    }
+    if (hits.length === 0) return;
+
+    let anyHit = false;
+    for (const { att, def, move } of hits) {
+      att.hasHit = true; // um golpe acerta uma única vez por execução
+      const result = def.takeHit(move, att);
+      if (result === 'hit') anyHit = true;
+      this.lastEvent = `${move.id} -> ${result}`;
+    }
+    this.hitstop = HITSTOP_FRAMES;
+    if (anyHit) this.game.renderer.shake(HIT_SHAKE_INTENSITY, HIT_SHAKE_FRAMES);
   }
 
   render(ctx) {
@@ -72,21 +115,13 @@ export class FightState {
     this.p1.render(ctx, camX);
     this.p2.render(ctx, camX);
 
-    if (this.game.debug) {
-      for (const f of [this.p1, this.p2]) {
-        const x = Math.round(f.x - camX);
-        const y = Math.round(f.y);
-        ctx.fillStyle = P.debug;
-        ctx.fillRect(x - 3, y, 7, 1);
-        ctx.fillRect(x, y - 3, 1, 7);
-      }
-    }
+    if (this.game.debug) drawFighterBoxes(ctx, [this.p1, this.p2], camX);
 
     ctx.font = `8px ${FONT}`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'top';
     ctx.fillStyle = P.hint;
-    ctx.fillText('TREINO  •  P1: WASD  •  P2: setas  •  ESC: sair', W / 2, H - 12);
+    ctx.fillText('P1 WASD+F/G/H  P2 SETAS+J/K/L  ESC', W / 2, H - 12);
   }
 
   debugLines() {
@@ -94,6 +129,7 @@ export class FightState {
     return [
       `P1 ${this.p1.describe()} ${g.input.describe(0)}`,
       `P2 ${this.p2.describe()} ${g.input.describe(1)}`,
+      `hitstop ${this.hitstop}  ultimo ${this.lastEvent}`,
       `cam x${this.camera.renderX}`,
     ];
   }

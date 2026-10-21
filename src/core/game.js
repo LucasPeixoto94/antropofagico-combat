@@ -2,10 +2,9 @@
 // TITLE → CHAR_SELECT → ROUND_INTRO → FIGHTING → ROUND_END → (ROUND_INTRO | MATCH_END) → TITLE
 // PAUSED acessível a partir de FIGHTING. Cada estado vive em src/states/.
 import { DEBUG_DEFAULT, CONTROLS } from '../config.js';
-import { PALETTE as P } from '../palette.js';
 import { GameState } from './gameState.js';
 import { Input } from './input.js';
-import { FONT } from '../render/text.js';
+import { drawPanel } from '../debug/debugOverlay.js';
 import { TitleState } from '../states/titleState.js';
 import { FightState } from '../states/fightState.js';
 
@@ -78,15 +77,6 @@ export class Game {
       `sprites png ${a.png} ph ${a.placeholder}`,
       ...(this.state.debugLines?.() ?? []),
     ];
-    const width = Math.max(...lines.map((l) => l.length)) * 8 + 8;
-    ctx.save();
-    ctx.fillStyle = P.debugBg;
-    ctx.fillRect(2, 2, width, lines.length * 10 + 6);
-    ctx.font = `8px ${FONT}`;
-    ctx.textAlign = 'left';
-    ctx.textBaseline = 'top';
-    ctx.fillStyle = P.debug;
-    lines.forEach((l, i) => ctx.fillText(l, 6, 6 + i * 10));
-    ctx.restore();
+    drawPanel(ctx, lines);
   }
 }

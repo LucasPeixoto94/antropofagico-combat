@@ -52,4 +52,7 @@ export const PALETTE = Object.freeze({
   // Debug
   debug: '#7cffb2',
   debugBg: 'rgba(0, 0, 0, 0.6)',
+  hurtbox: '#3dff7a',
+  hitbox: '#ff3b3b',
+  hitboxFill: 'rgba(255, 59, 59, 0.35)',
 });

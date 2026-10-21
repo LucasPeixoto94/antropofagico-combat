@@ -78,10 +78,63 @@ export const CAMERA_LERP = 0.15;
 export const FIGHTER_START_OFFSET = 80;
 
 // ---- Personagens ----
-// Vida entra na Etapa 5.
 export const CHARACTER_STATS = Object.freeze({
-  saci: Object.freeze({ height: 100, walkSpeed: 2.6, jumpVelocity: -9.5 }),
-  curupira: Object.freeze({ height: 112, walkSpeed: 2.1, jumpVelocity: -8.8 }),
+  saci: Object.freeze({ height: 100, maxHealth: 90, walkSpeed: 2.6, jumpVelocity: -9.5 }),
+  curupira: Object.freeze({ height: 112, maxHealth: 110, walkSpeed: 2.1, jumpVelocity: -8.8 }),
+});
+
+// ---- Combate ----
+/** Congelamento de ambos os lutadores quando um golpe acerta ou é defendido. */
+export const HITSTOP_FRAMES = 5;
+/** Fração do dano que passa quando o golpe é defendido (dano de "chip"; mínimo 1). */
+export const BLOCK_DAMAGE_MULTIPLIER = 0.2;
+/** Velocidade inicial de empurrão ao defender / ao ser acertado (decai com KNOCKBACK_FRICTION). */
+export const BLOCK_PUSHBACK = 3;
+export const HIT_KNOCKBACK = 5;
+export const KNOCKBACK_FRICTION = 0.82;
+/** Quanto tempo o lutador fica no chão depois de derrubado. */
+export const KNOCKDOWN_FRAMES = 40;
+/** Impulso vertical ao ser acertado no ar (pequeno "pop"). */
+export const AIR_HIT_POP = -4;
+/** Tremor de tela ao acertar (defesa não treme). */
+export const HIT_SHAKE_INTENSITY = 2;
+export const HIT_SHAKE_FRAMES = 6;
+
+// ---- Caixas de colisão (AABB, relativas aos pés, olhando para a direita) ----
+export const HURTBOX_WIDTH = 28;
+/** Altura da hurtbox no ar, em relação à altura em pé. */
+export const AIR_HURTBOX_RATIO = 0.8;
+/** Altura de referência das hitboxes dos golpes; escalam com a altura do personagem. */
+export const REF_HEIGHT = 100;
+
+const move = (m) => Object.freeze({ ...m, hitbox: Object.freeze(m.hitbox) });
+
+/**
+ * Golpes básicos (ponto de partida; ajustar jogando). Personagens podem sobrescrever
+ * campos em `moves` nos seus dados. Unidades: frames a 60 FPS e pixels.
+ * stance: 'stand' | 'crouch' | 'air'
+ */
+export const BASIC_MOVES = Object.freeze({
+  punch: move({
+    stance: 'stand', startup: 4, active: 3, recovery: 8,
+    damage: 6, hitstun: 14, blockstun: 9, hitbox: { x: 12, y: -70, w: 34, h: 14 },
+  }),
+  kick: move({
+    stance: 'stand', startup: 6, active: 3, recovery: 12,
+    damage: 9, hitstun: 18, blockstun: 11, hitbox: { x: 12, y: -50, w: 44, h: 16 },
+  }),
+  crouch_punch: move({
+    stance: 'crouch', startup: 5, active: 3, recovery: 9,
+    damage: 5, hitstun: 13, blockstun: 8, hitbox: { x: 12, y: -42, w: 32, h: 14 },
+  }),
+  crouch_kick: move({
+    stance: 'crouch', startup: 7, active: 3, recovery: 14,
+    damage: 7, hitstun: 20, blockstun: 10, knockdown: true, hitbox: { x: 12, y: -12, w: 48, h: 12 },
+  }),
+  air: move({
+    stance: 'air', startup: 5, active: 6, recovery: 6,
+    damage: 8, hitstun: 16, blockstun: 10, hitbox: { x: 10, y: -50, w: 40, h: 30 },
+  }),
 });
 
 // ---- Carregamento ----

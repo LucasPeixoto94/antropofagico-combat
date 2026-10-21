@@ -38,7 +38,7 @@ export function generatePlaceholderSheet(o, flipped = false) {
     if (flipped) rects = rects.map((q) => ({ ...q, x: -q.x - q.w }));
     drawRects(ctx, rects, ox + pivotX, o.pivot.y);
     const top = Math.min(...rects.map((q) => q.y));
-    drawLabel(ctx, `${o.state} ${i}`, ox + o.frameWidth / 2, o.pivot.y + top - 8);
+    drawLabel(ctx, `${shortLabel(o.state)} ${i}`, ox + o.frameWidth / 2, o.pivot.y + top - 8);
   }
   return canvas;
 }
@@ -67,11 +67,83 @@ function drawLabel(ctx, text, cx, y) {
 
 const r = (x, y, w, h, c) => ({ x: Math.round(x), y: Math.round(y), w: Math.round(w), h: Math.round(h), c });
 
+/** Abrevia nomes longos de estado para o rótulo caber no frame (ex.: attack_crouch_kick -> atk cr_kick). */
+function shortLabel(state) {
+  return state.replace(/^attack_/, 'atk ').replace('crouch', 'cr');
+}
+
+/** Pose base usada por cada pose de combate (as demais poses são a própria base). */
+const POSE_BASE = {
+  attack_punch: 'idle',
+  attack_kick: 'idle',
+  attack_crouch_punch: 'crouch',
+  attack_crouch_kick: 'crouch',
+  attack_air: 'jump',
+  block: 'idle',
+  crouch_block: 'crouch',
+  hitstun: 'idle',
+};
+
 /**
- * Monta a silhueta em coordenadas relativas ao pivô (pés no 0,0; y cresce para baixo; olhando para a direita).
- * pose: 'idle' | 'walk_fwd' | 'walk_back' | 'jump' | 'crouch'
+ * Silhueta completa de uma pose. Golpes têm 3 frames (preparo, golpe, recuperação);
+ * o alcance do membro no frame 1 acompanha a hitbox em config.js (BASIC_MOVES).
  */
 function buildFigure(kind, h, frame, frames, pose = 'idle') {
+  if (pose === 'knockdown') return buildLying(kind, frame);
+  let rects = buildBase(kind, h, frame, frames, POSE_BASE[pose] ?? pose);
+  const skin = kind === 'curupira' ? P.curupiraSkin : P.saciSkin;
+  const shade = kind === 'curupira' ? P.curupiraShade : P.saciShade;
+  const reach = (lens) => lens[Math.min(frame, 2)];
+  switch (pose) {
+    case 'attack_punch':
+      rects.push(r(8, -h * 0.68, reach([10, 38, 16]), 7, skin));
+      break;
+    case 'attack_kick':
+      rects.push(r(4, -h * 0.5, reach([8, 52, 16]), 8, shade));
+      break;
+    case 'attack_crouch_punch':
+      rects.push(r(4, -h * 0.42, reach([10, 40, 14]), 7, skin));
+      break;
+    case 'attack_crouch_kick':
+      rects.push(r(4, -10, reach([10, 56, 16]), 8, shade));
+      break;
+    case 'attack_air':
+      rects.push(r(4, -h * 0.35, reach([10, 44, 16]), 10, shade));
+      break;
+    case 'block':
+      rects.push(r(10, -h * 0.8, 8, h * 0.3, shade));
+      break;
+    case 'crouch_block':
+      rects.push(r(10, -h * 0.52, 8, h * 0.2, shade));
+      break;
+    case 'hitstun':
+      rects = rects.map((q) => ({ ...q, x: q.x - 5 }));
+      break;
+    default:
+  }
+  return rects;
+}
+
+/** Figura deitada (knockdown). */
+function buildLying(kind, frame) {
+  const skin = kind === 'curupira' ? P.curupiraSkin : P.saciSkin;
+  const shade = kind === 'curupira' ? P.curupiraShade : P.saciShade;
+  const dy = frame % 2 ? -1 : 0;
+  const rects = [
+    r(-34, -14 + dy, 64, 14, skin),
+    r(-38, -8 + dy, 8, 8, shade),
+    r(30, -18 + dy, 18, 18, skin),
+  ];
+  if (kind === 'curupira') rects.push(r(48, -22 + dy, 6, 12, P.curupiraHair));
+  else rects.push(r(30, -24 + dy, 18, 6, P.saciCap));
+  return rects;
+}
+
+/**
+ * Silhueta base em coordenadas relativas ao pivô (pés no 0,0; y cresce para baixo; olhando para a direita).
+ * pose: 'idle' | 'walk_fwd' | 'walk_back' | 'jump' | 'crouch'
+ */
+function buildBase(kind, h, frame, frames, pose = 'idle') {
   // Respiração: corpo sobe 1 px na metade do ciclo.
   const bob = Math.sin((frame / frames) * Math.PI * 2) > 0 ? -1 : 0;
   // Pernas: no agachado encolhem até a altura total bater com CROUCH_HEIGHT_RATIO.
