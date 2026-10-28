@@ -1,6 +1,6 @@
-// Estado FIGHTING (Etapa 5: Saci vs Curupira, vida, pushbox e KO).
-// P2 (Curupira) fica parado, a menos que o segundo jogador use as teclas.
-// Rounds, timer e pausa entram na Etapa 6; por ora, após o KO, ENTER reinicia a luta.
+// Estado FIGHTING (Etapa 4: modo treino com golpes).
+// Saci (P1) vs Curupira como boneco de treino — fica parado, a menos que o P2 use as teclas.
+// Rounds, vida na tela e pausa entram nas Etapas 5–6.
 import {
   INTERNAL_WIDTH as W,
   INTERNAL_HEIGHT as H,

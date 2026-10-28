@@ -168,8 +168,6 @@ Estados: `idle`, `walk_fwd`, `walk_back`, `jump`, `crouch`, `block`, `attack`, `
 | Estados modulares em `src/states/` e enum em `src/core/gameState.js` | Evita dependência circular e mantém game.js enxuto conforme novos estados forem adicionados | Tudo concentrado em game.js |
 | Frame data dos golpes básicos em `config.js` (`BASIC_MOVES`), com sobrescrita opcional por personagem (`moves` em `characters/*.js`) | Segue a regra "balanceamento só em config.js" e a tabela da seção 6; especiais (Etapa 7) entram nos arquivos dos personagens | Frame data só nos arquivos dos personagens (espalharia números) |
 | Defesa bloqueia qualquer golpe (sem guarda alta/baixa) e só no chão | Mantém o escopo simples do protótipo; guarda alta/baixa seria um sistema extra | Guarda alta/baixa (fora do escopo) |
-| Pushbox só no chão; no canto, quem não está encurralado absorve todo o empurrão | Permite pular por cima do oponente e evita lutadores presos um dentro do outro nos cantos | Pushbox também no ar (impede cruzar pulando) |
-| Dano de defesa (chip) nunca causa KO; após KO, ENTER reinicia a luta (provisório até a Etapa 6) | Evita vitória "barata" por chip; permite testar KO repetidamente antes do sistema de rounds | KO por chip |
 
 Observação: módulos ES não funcionam abrindo `index.html` direto (`file://`); usar `npx serve` ou `python -m http.server`.
 
@@ -229,10 +227,10 @@ Regras para **todas** as etapas: rodar e testar no navegador, atualizar os check
 
 ### Etapa 5 — Dois lutadores, dano e vida
 **Objetivo:** Saci vs Curupira, vida e KO.
-- [x] `characters/curupira.js` com dados básicos
-- [x] Pushbox (um não atravessa o outro)
-- [x] Dano, barras de vida (HUD), KO e animação de queda
-- [x] `render/hud.js`
+- [ ] `characters/curupira.js` com dados básicos
+- [ ] Pushbox (um não atravessa o outro)
+- [ ] Dano, barras de vida (HUD), KO e animação de queda
+- [ ] `render/hud.js`
 
 **Arquivos:** `characters/curupira.js`, `render/hud.js`, `fight/fighter.js`, `fight/collision.js`
 **Aceite:** dois jogadores humanos lutam; a vida cai conforme o dano; ao zerar, o lutador cai (`knockdown`) e os controles travam.
