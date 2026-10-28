@@ -42,7 +42,7 @@ export class TitleState {
     if (g.input.pressedAny(CONTROLS.confirm)) {
       g.renderer.flash(P.flashWhite, ENTER_FLASH_FRAMES);
       g.renderer.shake(ENTER_SHAKE_INTENSITY, ENTER_SHAKE_FRAMES);
-      // Etapa 3: vai direto para o treino. Seleção de personagem chega na Etapa 10.
+      // Começa uma partida Saci x Curupira. Seleção de personagem chega na Etapa 10.
       g.setState(GameState.FIGHTING);
       return;
     }

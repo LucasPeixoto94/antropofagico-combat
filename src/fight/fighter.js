@@ -32,6 +32,7 @@ export const FighterState = Object.freeze({
   ATTACK: 'attack',
   HITSTUN: 'hitstun',
   KNOCKDOWN: 'knockdown',
+  VICTORY: 'victory',
 });
 const S = FighterState;
 
@@ -109,6 +110,9 @@ export class Fighter {
         break;
       case S.KNOCKDOWN:
         this._updateKnockdown(opponent);
+        break;
+      case S.VICTORY:
+        this.vx = 0; // comemora parado até o próximo round
         break;
       case S.BLOCK:
         if (this.stun > 0) {
@@ -271,6 +275,19 @@ export class Fighter {
       this.setState(S.HITSTUN);
     }
     return 'hit';
+  }
+
+  /**
+   * Entra na pose de vitória se estiver livre (no chão, fora de golpe/stun).
+   * @returns {boolean} true se comemorou (ou já estava comemorando)
+   */
+  celebrate() {
+    if (this.state === S.VICTORY) return true;
+    const free = [S.IDLE, S.WALK_FWD, S.WALK_BACK, S.CROUCH, S.BLOCK].includes(this.state);
+    if (this.ko || this.airborne || !free || this.stun > 0) return false;
+    this.vx = 0;
+    this.setState(S.VICTORY);
+    return true;
   }
 
   _updateKnockdown(opponent) {

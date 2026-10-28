@@ -67,4 +67,18 @@ export const PALETTE = Object.freeze({
   hudText: '#ffffff',
   hudKoText: '#ff3333',
   hudKoGlow: 'rgba(255, 50, 50, 0.8)',
+  hudTimer: '#ffd166',
+  hudTimerWarn: '#ff4d4d',
+  hudTimerGlow: 'rgba(255, 209, 102, 0.5)',
+  hudWinMarker: '#ffd166',
+
+  // Anúncios de round
+  announce: '#ffd166',
+  announceFight: '#ff8a3d',
+  announceGlow: 'rgba(255, 140, 60, 0.7)',
+
+  // Pausa
+  pauseOverlay: 'rgba(3, 8, 6, 0.7)',
+  pauseOption: '#cfe8d3',
+  pauseSelected: '#ffd166',
 });

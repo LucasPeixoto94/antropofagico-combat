@@ -1,5 +1,6 @@
 // Máquina de estados do jogo.
 // TITLE → CHAR_SELECT → ROUND_INTRO → FIGHTING → ROUND_END → (ROUND_INTRO | MATCH_END) → TITLE
+// As fases do round (ROUND_INTRO, ROUND_END, MATCH_END) vivem dentro de FIGHTING (fight/round.js).
 // PAUSED acessível a partir de FIGHTING. Cada estado vive em src/states/.
 import { DEBUG_DEFAULT, CONTROLS } from '../config.js';
 import { GameState } from './gameState.js';
@@ -7,6 +8,7 @@ import { Input } from './input.js';
 import { drawPanel } from '../debug/debugOverlay.js';
 import { TitleState } from '../states/titleState.js';
 import { FightState } from '../states/fightState.js';
+import { PauseState } from '../states/pauseState.js';
 
 export { GameState };
 
@@ -27,6 +29,7 @@ export class Game {
     this.states = {
       [GameState.TITLE]: new TitleState(this),
       [GameState.FIGHTING]: new FightState(this),
+      [GameState.PAUSED]: new PauseState(this),
     };
     this.state = null;
     this.stateName = null;
@@ -34,7 +37,11 @@ export class Game {
     this.setState(GameState.TITLE);
   }
 
-  setState(name) {
+  /**
+   * @param {string} name
+   * @param {Object} [params] repassado ao enter() do estado (ex.: { resume: true } ao sair da pausa)
+   */
+  setState(name, params) {
     const next = this.states[name];
     if (!next) {
       console.warn(`[game] estado ainda não implementado: ${name}`);
@@ -43,7 +50,7 @@ export class Game {
     this.state?.exit?.();
     this.state = next;
     this.stateName = name;
-    this.state.enter?.();
+    this.state.enter?.(params);
   }
 
   update() {

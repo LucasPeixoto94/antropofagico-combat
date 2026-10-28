@@ -75,7 +75,9 @@ antropofagico-combat/
 │   ├── stages/<cenario>/<camada>.png
 │   └── fx/
 └── tests/
-    └── inputBuffer.test.mjs   # testes do reconhecimento de sequências (node:test)
+    ├── round.test.mjs         # testes de rounds, timer e placar (node:test)
+    ├── inputBuffer.test.mjs   # testes do reconhecimento de sequências (node:test)
+    └── e2e.mjs                # teste E2E em navegador headless via CDP
 ```
 
 **Responsabilidades-chave**
@@ -162,12 +164,17 @@ Estados: `idle`, `walk_fwd`, `walk_back`, `jump`, `crouch`, `block`, `attack`, `
 | Placeholders procedurais com fallback | Dá para jogar e balancear sem arte; troca de arte sem tocar no código | Esperar a arte |
 | RNG com seed | Determinismo para testes e replays futuros | `Math.random()` direto |
 | `node:test` para o input buffer | Sem dependências, cobre a parte mais frágil | Sem testes |
-| Servidor local via `python -m http.server` | Node ainda não instalado na máquina; Python já disponível. Node entra antes da Etapa 7 | `npx serve` (requer Node) |
+| Servidor local via `python -m http.server` | Python já disponível; Node (v26 LTS) instalado na Etapa 6 para os testes | `npx serve` (requer Node) |
 | Fonte "Press Start 2P" (Google Fonts) com fallback `monospace` e timeout de 1,5 s | Visual pixel imediato sem desenhar fonte bitmap; não bloqueia o boot offline | Fonte bitmap própria (pode vir na Etapa 10) |
 | `render/sprites.js` antecipado para a Etapa 2; placeholders gerados também pré-espelhados | Necessário para exibir o sprite de teste; o texto do placeholder não sai invertido quando o lutador olha para a esquerda | Espelhar tudo via `scale(-1,1)` (texto ilegível) |
 | Estados modulares em `src/states/` e enum em `src/core/gameState.js` | Evita dependência circular e mantém game.js enxuto conforme novos estados forem adicionados | Tudo concentrado em game.js |
 | Frame data dos golpes básicos em `config.js` (`BASIC_MOVES`), com sobrescrita opcional por personagem (`moves` em `characters/*.js`) | Segue a regra "balanceamento só em config.js" e a tabela da seção 6; especiais (Etapa 7) entram nos arquivos dos personagens | Frame data só nos arquivos dos personagens (espalharia números) |
 | Defesa bloqueia qualquer golpe (sem guarda alta/baixa) e só no chão | Mantém o escopo simples do protótipo; guarda alta/baixa seria um sistema extra | Guarda alta/baixa (fora do escopo) |
+| Pushbox só no chão; no canto, quem não está encurralado absorve todo o empurrão | Permite pular por cima do oponente e evita lutadores presos um dentro do outro nos cantos | Pushbox também no ar (impede cruzar pulando) |
+| Dano de defesa (chip) nunca causa KO | Evita vitória "barata" por chip | KO por chip |
+| Fases do round (`ROUND_INTRO`, `ROUND_END`, `MATCH_END`) vivem dentro de `FIGHTING`, em `fight/round.js` (classe `Match`, sem DOM); `PAUSED` é um estado do jogo que retoma com `setState(FIGHTING, { resume: true })` | Lutadores, câmera e HUD continuam vivos entre as fases sem passar objetos entre estados; a lógica de rounds fica pura e testável com `node:test` | Um estado do jogo por fase (exigiria compartilhar a partida entre 4 estados) |
+| Tempo esgotado decide por **porcentagem** de vida; empate (vida igual ou duplo K.O.) não pontua, com limite de `MAX_ROUNDS = 5` (depois decide pelo placar ou empata a partida) | Saci (90) e Curupira (110) têm vidas máximas diferentes; o limite evita partida infinita | Vida absoluta (favorece o Curupira); empate dando ponto aos dois |
+| Teste E2E (`tests/e2e.mjs`) dirige Edge/Chrome headless pelo DevTools Protocol com o `WebSocket` nativo do Node, sem dependências; desliga o loop e avança ticks manualmente | Testa a partida completa no navegador real, de forma determinística, sem `npm install` | Puppeteer/Playwright (dependências pesadas) |
 
 Observação: módulos ES não funcionam abrindo `index.html` direto (`file://`); usar `npx serve` ou `python -m http.server`.
 
@@ -227,10 +234,10 @@ Regras para **todas** as etapas: rodar e testar no navegador, atualizar os check
 
 ### Etapa 5 — Dois lutadores, dano e vida
 **Objetivo:** Saci vs Curupira, vida e KO.
-- [ ] `characters/curupira.js` com dados básicos
-- [ ] Pushbox (um não atravessa o outro)
-- [ ] Dano, barras de vida (HUD), KO e animação de queda
-- [ ] `render/hud.js`
+- [x] `characters/curupira.js` com dados básicos
+- [x] Pushbox (um não atravessa o outro)
+- [x] Dano, barras de vida (HUD), KO e animação de queda
+- [x] `render/hud.js`
 
 **Arquivos:** `characters/curupira.js`, `render/hud.js`, `fight/fighter.js`, `fight/collision.js`
 **Aceite:** dois jogadores humanos lutam; a vida cai conforme o dano; ao zerar, o lutador cai (`knockdown`) e os controles travam.
@@ -238,10 +245,10 @@ Regras para **todas** as etapas: rodar e testar no navegador, atualizar os check
 
 ### Etapa 6 — Rounds, timer e telas
 **Objetivo:** partida completa melhor de 3.
-- [ ] `fight/round.js` (timer de 60 s, KO, tempo esgotado, vitória por vida)
-- [ ] Telas "ROUND 1 / FIGHT!", "K.O." e vitória
-- [ ] Pausa com ESC
-- [ ] Reinício de round (posições, vida, estados)
+- [x] `fight/round.js` (timer de 60 s, KO, tempo esgotado, vitória por vida)
+- [x] Telas "ROUND 1 / FIGHT!", "K.O." e vitória
+- [x] Pausa com ESC
+- [x] Reinício de round (posições, vida, estados)
 
 **Arquivos:** `fight/round.js`, `core/game.js`, `render/hud.js`
 **Aceite:** jogo flui do início ao fim de uma partida, com placar de rounds; o timer acaba e decide por vida restante; ESC pausa e retoma sem perder estado.

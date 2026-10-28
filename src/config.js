@@ -114,6 +114,36 @@ export const HUD_BAR_HEIGHT = 12;
 export const HUD_BAR_MARGIN_X = 20;
 export const HUD_BAR_MARGIN_Y = 12;
 export const HUD_DAMAGE_TRAIL_SPEED = 0.05;
+/** Marcadores de rounds vencidos (quadradinhos sob as barras). */
+export const HUD_WIN_MARKER_SIZE = 7;
+export const HUD_WIN_MARKER_GAP = 4;
+/** Abaixo destes segundos o timer fica vermelho e pisca. */
+export const TIMER_WARNING_SECONDS = 10;
+
+// ---- Rounds ----
+/** Duração do round em segundos. */
+export const ROUND_TIME = 60;
+/** Melhor de 3: vence quem ganhar 2 rounds. */
+export const ROUNDS_TO_WIN = 2;
+/** Limite de rounds (empates não pontuam); depois disso decide pelo placar ou empata. */
+export const MAX_ROUNDS = 5;
+/** Duração total da introdução ("ROUND 1" e depois "FIGHT!"). */
+export const ROUND_INTRO_FRAMES = 120;
+/** Últimos frames da introdução, em que aparece "FIGHT!". */
+export const ROUND_INTRO_FIGHT_FRAMES = 40;
+/** Câmera lenta logo após o K.O. (lutadores atualizam 1 a cada KO_SLOWMO_RATE ticks). */
+export const KO_SLOWMO_FRAMES = 60;
+export const KO_SLOWMO_RATE = 2;
+/** Efeitos do K.O. */
+export const KO_SHAKE_INTENSITY = 4;
+export const KO_SHAKE_FRAMES = 20;
+export const KO_FLASH_FRAMES = 6;
+/** Duração total da tela de fim de round (K.O./TEMPO + quem venceu). */
+export const ROUND_END_FRAMES = 200;
+/** Momento (dentro do fim de round) em que o anúncio troca para o vencedor e ele comemora. */
+export const ROUND_END_WINNER_FRAMES = 80;
+/** Espera na tela de vitória antes de aceitar ENTER (evita pular sem querer). */
+export const MATCH_END_INPUT_DELAY = 60;
 
 const move = (m) => Object.freeze({ ...m, hitbox: Object.freeze(m.hitbox) });
 

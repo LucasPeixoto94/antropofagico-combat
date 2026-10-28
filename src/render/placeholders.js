@@ -119,6 +119,10 @@ function buildFigure(kind, h, frame, frames, pose = 'idle') {
     case 'hitstun':
       rects = rects.map((q) => ({ ...q, x: q.x - 5 }));
       break;
+    case 'victory':
+      // Braço erguido; sobe 2 px no segundo frame.
+      rects.push(r(h * 0.12 - 3, -h * 1.0 - (frame % 2) * 2, 6, h * 0.32, shade));
+      break;
     default:
   }
   return rects;

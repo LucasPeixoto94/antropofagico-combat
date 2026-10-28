@@ -21,10 +21,10 @@ Depois abra <http://localhost:8000>.
 ### Geral
 | Tecla | Ação |
 |---|---|
-| ENTER | Iniciar modo de treino (na tela de título) |
-| ESC | Voltar para o menu principal |
-| ENTER (após K.O.) | Reiniciar a luta |
-| F1 | Liga/desliga debug: estado, frames do golpe, hp, hurtbox (verde), pushbox (azul) e hitbox (vermelha, só nos frames *active*) |
+| ENTER | Iniciar partida (na tela de título) / Confirmar no menu de pausa / Voltar ao título após vitória |
+| ESC | Pausar / Retomar a partida |
+| Setas / W, S (na pausa) | Navegar pelo menu de pausa (Continuar / Sair para o título) |
+| F1 | Liga/desliga debug: estado, frames do golpe, hp, round/timer/placar, hurtbox (verde), pushbox (azul) e hitbox (vermelha, só nos frames *active*) |
 
 ### Jogador 1 (Saci)
 | Tecla | Ação |
@@ -45,7 +45,16 @@ Depois abra <http://localhost:8000>.
 
 Golpes mudam com a posição: em pé, **agachado** (segurando ↓) e **no ar** (durante o pulo). O chute agachado derruba (rasteira).
 
-Cada lutador tem uma barra de vida no topo da tela (Saci 90, Curupira 110). Ao zerar, o lutador cai, fica no chão (K.O.) e os controles travam. Dano em defesa (chip) nunca nocauteia.
+Cada lutador tem uma barra de vida no topo da tela (Saci 90, Curupira 110). As partidas são **melhor de 3 rounds** (vence quem ganhar 2), com timer de **60 segundos** por round. Ao zerar a vida, o lutador cai em K.O. Se o tempo acabar, vence quem tiver maior porcentagem de vida restante. Dano em defesa (chip) nunca nocauteia.
+
+## Testes
+
+Com Node.js instalado:
+
+```bash
+node --test tests/      # testes unitários (rounds, timer, placar)
+node tests/e2e.mjs      # teste end-to-end no navegador headless (gera screenshots em tests/output/)
+```
 
 ## Sprites: trocar placeholders por PNG
 

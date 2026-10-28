@@ -13,4 +13,5 @@ export const COMBAT_ANIMATIONS = Object.freeze({
   crouch_block: { frames: 2, fps: 8, loop: true },
   hitstun: { frames: 2, fps: 8, loop: true },
   knockdown: { frames: 2, fps: 6, loop: false },
+  victory: { frames: 2, fps: 3, loop: true },
 });
