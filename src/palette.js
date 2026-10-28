@@ -49,6 +49,14 @@ export const PALETTE = Object.freeze({
   curupiraHairHot: '#ffd166',
   curupiraLoincloth: '#8a5a2b',
 
+  // Especiais / Projéteis
+  whirlwind: '#cbd5e1',
+  whirlwindShade: '#94a3b8',
+  projectileCore: '#fff3b0',
+  projectileMid: '#ff8a2b',
+  projectileOuter: '#e63917',
+  projectileGlow: 'rgba(255, 110, 20, 0.75)',
+
   // Debug
   debug: '#7cffb2',
   debugBg: 'rgba(0, 0, 0, 0.6)',

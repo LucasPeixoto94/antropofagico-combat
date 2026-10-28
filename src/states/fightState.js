@@ -29,6 +29,7 @@ import { GameState } from '../core/gameState.js';
 import { ACTIONS } from '../core/input.js';
 import { Camera } from '../core/camera.js';
 import { Fighter } from '../fight/fighter.js';
+import { Projectile } from '../fight/projectile.js';
 import { overlaps, resolvePushbox } from '../fight/collision.js';
 import { Match, MatchEvent, RoundPhase, RoundEndReason } from '../fight/round.js';
 import { CHARACTERS } from '../characters/index.js';
@@ -81,8 +82,16 @@ export class FightState {
   _resetRound() {
     const g = this.game;
     const mid = STAGE_WIDTH / 2;
-    this.p1 = new Fighter({ def: CHARACTERS.saci, assets: g.assets, x: mid - FIGHTER_START_OFFSET, facing: 1 });
-    this.p2 = new Fighter({ def: CHARACTERS.curupira, assets: g.assets, x: mid + FIGHTER_START_OFFSET, facing: -1 });
+    this.projectiles = [];
+    const onSpawnProjectile = (owner, move) => {
+      this.projectiles.push(new Projectile({ owner, move }));
+    };
+    this.p1 = new Fighter({
+      def: CHARACTERS.saci, assets: g.assets, x: mid - FIGHTER_START_OFFSET, facing: 1, onSpawnProjectile,
+    });
+    this.p2 = new Fighter({
+      def: CHARACTERS.curupira, assets: g.assets, x: mid + FIGHTER_START_OFFSET, facing: -1, onSpawnProjectile,
+    });
     this.camera = new Camera();
     this.camera.snap(this.p1, this.p2);
     this.hud = new Hud();
@@ -160,7 +169,12 @@ export class FightState {
     const fighting = m.fighting;
     this.p1.update(fighting ? g.input.actions(0) : NO_INPUT, this.p2);
     this.p2.update(fighting ? g.input.actions(1) : NO_INPUT, this.p1);
-    if (fighting) this._resolveHits();
+    for (const proj of this.projectiles) proj.update();
+    if (fighting) {
+      this._resolveHits();
+      this._resolveProjectiles();
+    }
+    this.projectiles = this.projectiles.filter((p) => p.active);
     resolvePushbox(this.p1, this.p2, STAGE_EDGE_MARGIN, STAGE_WIDTH - STAGE_EDGE_MARGIN);
     constrainFighters(this.p1, this.p2);
 
@@ -202,14 +216,53 @@ export class FightState {
     if (anyHit) this.game.renderer.shake(HIT_SHAKE_INTENSITY, HIT_SHAKE_FRAMES);
   }
 
+  /** Colisão de projéteis (projétil x projétil se anulam; projétil x oponente aplica dano). */
+  _resolveProjectiles() {
+    // 1) Dois projéteis opostos que se chocam se anulam.
+    for (let i = 0; i < this.projectiles.length; i++) {
+      const a = this.projectiles[i];
+      if (!a.active) continue;
+      for (let j = i + 1; j < this.projectiles.length; j++) {
+        const b = this.projectiles[j];
+        if (!b.active || a.owner === b.owner) continue;
+        if (overlaps(a.hitbox(), b.hitbox())) {
+          a.active = false;
+          b.active = false;
+          this.lastEvent = 'proj clash';
+        }
+      }
+    }
+
+    // 2) Projétil contra a hurtbox do oponente.
+    let anyHit = false;
+    let triggered = false;
+    for (const proj of this.projectiles) {
+      if (!proj.active) continue;
+      const def = proj.owner === this.p1 ? this.p2 : this.p1;
+      const hurtbox = def.hurtbox();
+      if (hurtbox && overlaps(proj.hitbox(), hurtbox)) {
+        proj.active = false;
+        const result = def.takeHit(proj.move, proj.owner);
+        if (result === 'hit') anyHit = true;
+        triggered = true;
+        this.lastEvent = `${proj.move.id} -> ${result}`;
+      }
+    }
+    if (triggered) {
+      this.hitstop = HITSTOP_FRAMES;
+      if (anyHit) this.game.renderer.shake(HIT_SHAKE_INTENSITY, HIT_SHAKE_FRAMES);
+    }
+  }
+
   render(ctx) {
     const camX = this.camera.renderX;
     drawTrainingStage(ctx, camX);
     // Derrotado atrás; vencedor na frente.
     const order = this.p1.ko ? [this.p1, this.p2] : [this.p2, this.p1];
     for (const f of order) f.render(ctx, camX);
+    for (const proj of this.projectiles) proj.render(ctx, camX);
 
-    if (this.game.debug) drawFighterBoxes(ctx, this.fighters, camX);
+    if (this.game.debug) drawFighterBoxes(ctx, this.fighters, camX, this.projectiles);
 
     this.hud.render(ctx, this.p1, this.p2, this.match, this.game.frame);
     this._renderAnnouncement(ctx);
@@ -271,11 +324,15 @@ export class FightState {
   debugLines() {
     const g = this.game;
     const m = this.match;
+    const b1 = this.p1.inputBuffer;
+    const b2 = this.p2.inputBuffer;
     return [
       `P1 ${this.p1.describe()} ${g.input.describe(0)}`,
+      `   buf [${b1.describe()}] esp:${b1.lastSpecial}`,
       `P2 ${this.p2.describe()} ${g.input.describe(1)}`,
+      `   buf [${b2.describe()}] esp:${b2.lastSpecial}`,
       `round ${m.round} ${m.phase} f${m.phaseFrame}  timer ${m.timeLeft}  placar ${m.wins[0]}-${m.wins[1]}`,
-      `hitstop ${this.hitstop}  ultimo ${this.lastEvent}`,
+      `hitstop ${this.hitstop}  proj ${this.projectiles.length}  ultimo ${this.lastEvent}`,
       `cam x${this.camera.renderX}`,
     ];
   }

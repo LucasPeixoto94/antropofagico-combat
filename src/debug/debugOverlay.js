@@ -30,8 +30,8 @@ function outlineBox(ctx, b, color) {
   ctx.fillRect(x + w - 1, y, 1, h);
 }
 
-/** Desenha pivô, hurtbox e hitbox de cada lutador (coordenadas do mundo -> tela). */
-export function drawFighterBoxes(ctx, fighters, camX) {
+/** Desenha pivô, hurtbox e hitbox de cada lutador e projéteis (coordenadas do mundo -> tela). */
+export function drawFighterBoxes(ctx, fighters, camX, projectiles = []) {
   ctx.save();
   for (const f of fighters) {
     const px = Math.round(f.x - camX);
@@ -47,6 +47,15 @@ export function drawFighterBoxes(ctx, fighters, camX) {
     if (hurt) outlineBox(ctx, { ...hurt, x: hurt.x - camX }, P.hurtbox);
 
     const hit = f.currentHitbox();
+    if (hit) {
+      const b = { ...hit, x: hit.x - camX };
+      ctx.fillStyle = P.hitboxFill;
+      ctx.fillRect(Math.round(b.x), Math.round(b.y), Math.round(b.w), Math.round(b.h));
+      outlineBox(ctx, b, P.hitbox);
+    }
+  }
+  for (const p of projectiles) {
+    const hit = p.hitbox();
     if (hit) {
       const b = { ...hit, x: hit.x - camX };
       ctx.fillStyle = P.hitboxFill;

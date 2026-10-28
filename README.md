@@ -24,7 +24,7 @@ Depois abra <http://localhost:8000>.
 | ENTER | Iniciar partida (na tela de título) / Confirmar no menu de pausa / Voltar ao título após vitória |
 | ESC | Pausar / Retomar a partida |
 | Setas / W, S (na pausa) | Navegar pelo menu de pausa (Continuar / Sair para o título) |
-| F1 | Liga/desliga debug: estado, frames do golpe, hp, round/timer/placar, hurtbox (verde), pushbox (azul) e hitbox (vermelha, só nos frames *active*) |
+| F1 | Liga/desliga debug: estado, frames do golpe, hp, buffer de inputs, último especial, round/timer/placar, hurtbox (verde), pushbox (azul) e hitbox (vermelha, só nos frames *active*) |
 
 ### Jogador 1 (Saci)
 | Tecla | Ação |
@@ -44,6 +44,16 @@ Depois abra <http://localhost:8000>.
 | L (ou Num 3) | Defesa (segurar) |
 
 Golpes mudam com a posição: em pé, **agachado** (segurando ↓) e **no ar** (durante o pulo). O chute agachado derruba (rasteira).
+
+### Golpes especiais (por sequência)
+As direções (`→` frente / `←` trás) são **relativas ao lado para onde o lutador está olhando** — funcionam igual dos dois lados da tela:
+
+| Personagem | Especial | Sequência | Efeito |
+|---|---|---|---|
+| **Saci** | **Redemoinho** | `↓` `→` + **Soco** | Investida giratória (~90 px) que derruba o oponente |
+| **Saci** | **Sumiço** | `↓` `←` + **Chute** | Desaparece em um redemoinho e reaparece atrás do oponente |
+| **Curupira** | **Fogo do Cabelo** | `↓` `→` + **Soco** | Dispara uma bola de fogo que atravessa a tela |
+| **Curupira** | **Pegada Invertida** | `↓` `←` + **Chute** | Rasteira deslizante (~70 px) que derruba à frente |
 
 Cada lutador tem uma barra de vida no topo da tela (Saci 90, Curupira 110). As partidas são **melhor de 3 rounds** (vence quem ganhar 2), com timer de **60 segundos** por round. Ao zerar a vida, o lutador cai em K.O. Se o tempo acabar, vence quem tiver maior porcentagem de vida restante. Dano em defesa (chip) nunca nocauteia.
 

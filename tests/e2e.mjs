@@ -121,9 +121,15 @@ const KEYS = {
   Escape: { key: 'Escape', vk: 27 },
   ArrowUp: { key: 'ArrowUp', vk: 38 },
   ArrowDown: { key: 'ArrowDown', vk: 40 },
+  ArrowLeft: { key: 'ArrowLeft', vk: 37 },
+  ArrowRight: { key: 'ArrowRight', vk: 39 },
+  KeyA: { key: 'a', vk: 65 },
   KeyD: { key: 'd', vk: 68 },
+  KeyS: { key: 's', vk: 83 },
   KeyF: { key: 'f', vk: 70 },
+  KeyG: { key: 'g', vk: 71 },
   KeyJ: { key: 'j', vk: 74 },
+  KeyK: { key: 'k', vk: 75 },
 };
 
 function makeHelpers(cdp) {
@@ -147,6 +153,12 @@ function makeHelpers(cdp) {
     await step(ticks);
     await keyEvent('keyUp', code);
   }
+  /** Segura várias teclas simultaneamente por `ticks` ticks. */
+  async function chord(codes, ticks = 1) {
+    for (const c of codes) await keyEvent('keyDown', c);
+    await step(ticks);
+    for (const c of codes) await keyEvent('keyUp', c);
+  }
   /** Avança ticks até a condição (expressão JS) ser verdadeira. */
   async function stepUntil(cond, max = 2000) {
     for (let i = 0; i < max; i++) {
@@ -160,7 +172,7 @@ function makeHelpers(cdp) {
     const { data } = await cdp.send('Page.captureScreenshot', { format: 'png' });
     fs.writeFileSync(path.join(OUT, `${name}.png`), Buffer.from(data, 'base64'));
   }
-  return { js, step, press, stepUntil, shot };
+  return { js, step, press, chord, stepUntil, shot };
 }
 
 // Expressões curtas reutilizadas
@@ -184,7 +196,7 @@ async function check(name, fn) {
 }
 
 async function scenario(h) {
-  const { js, step, press, stepUntil, shot } = h;
+  const { js, step, press, chord, stepUntil, shot } = h;
 
   await check('tela de título carregou', async () => {
     assert.equal(await js('__game.stateName'), 'TITLE');
@@ -212,6 +224,52 @@ async function scenario(h) {
     const x0 = await js(`${F}.p1.x`);
     await press('KeyD', 20);
     assert.ok((await js(`${F}.p1.x`)) > x0, 'P1 deveria andar para a direita');
+  });
+
+  await check('Especiais Saci: Redemoinho (↓ → + P) e Sumiço (↓ ← + K)', async () => {
+    // Posiciona Saci a 75 px do Curupira e executa ↓ → + F (Redemoinho)
+    await js(`(() => { const f = ${F}; f.p1.x = 400; f.p2.x = 475; f.p2.health = 110; })()`);
+    await press('KeyS', 2);
+    await chord(['KeyD', 'KeyF'], 1);
+    assert.equal(await js(`${F}.p1.move?.id`), 'redemoinho');
+    assert.equal(await js(`${F}.p1.inputBuffer.lastSpecial`), 'redemoinho');
+    await step(12);
+    await shot('03a-saci-redemoinho');
+    await stepUntil(`${F}.p1.state === 'idle' && ${F}.p2.state === 'idle'`, 200);
+    assert.equal(await js(`${F}.p2.health`), 110 - 12);
+
+    // Sumiço (↓ ← + G): Saci reaparece atrás do Curupira (x > p2.x) e olha para a esquerda
+    const p2x = await js(`${F}.p2.x`);
+    await press('KeyS', 2);
+    await chord(['KeyA', 'KeyG'], 1);
+    assert.equal(await js(`${F}.p1.move?.id`), 'sumico');
+    await stepUntil(`${F}.p1.state === 'idle'`, 100);
+    assert.ok((await js(`${F}.p1.x`)) > p2x, 'Saci deveria ter teleportado para a direita do Curupira');
+    assert.equal(await js(`${F}.p1.facing`), -1);
+  });
+
+  await check('Especiais Curupira: Fogo do Cabelo (↓ → + P) e Pegada Invertida (↓ ← + K)', async () => {
+    // Reposiciona P1 à esquerda e P2 à direita (facing = -1, então forward de P2 = ArrowLeft)
+    await js(`(() => { const f = ${F}; f.p1.x = 380; f.p2.x = 500; f.p1.health = 90; })()`);
+    await step(2);
+    await press('ArrowDown', 2);
+    await chord(['ArrowLeft', 'KeyJ'], 1);
+    assert.equal(await js(`${F}.p2.move?.id`), 'fogo_do_cabelo');
+    await stepUntil(`${F}.projectiles.length === 1`, 40);
+    await shot('03b-curupira-fogo');
+    await stepUntil(`${F}.p1.health < 90`, 100);
+    assert.equal(await js(`${F}.p1.health`), 90 - 10);
+    await stepUntil(`${F}.p1.state === 'idle' && ${F}.p2.state === 'idle'`, 150);
+
+    // Pegada Invertida (↓ ← + K; para P2 olhando para a esquerda, back = ArrowRight)
+    await js(`(() => { const f = ${F}; f.p1.x = 420; f.p2.x = 490; })()`);
+    await step(2);
+    await press('ArrowDown', 2);
+    await chord(['ArrowRight', 'KeyK'], 1);
+    assert.equal(await js(`${F}.p2.move?.id`), 'pegada_invertida');
+    await stepUntil(`${F}.p1.state === 'knockdown'`, 60);
+    assert.equal(await js(`${F}.p1.health`), 80 - 11);
+    await stepUntil(`${F}.p1.state === 'idle' && ${F}.p2.state === 'idle'`, 200);
   });
 
   await check('K.O. no round 1: Curupira cai e Saci pontua', async () => {

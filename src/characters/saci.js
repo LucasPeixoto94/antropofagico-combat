@@ -1,5 +1,5 @@
 // Saci — dados do personagem. O código de fighter.js é genérico; aqui só há dados.
-import { CHARACTER_STATS } from '../config.js';
+import { CHARACTER_STATS, SPECIAL_MOVES } from '../config.js';
 import { COMBAT_ANIMATIONS } from './common.js';
 
 export default Object.freeze({
@@ -14,7 +14,14 @@ export default Object.freeze({
     jump: { frames: 4, fps: 8, loop: false },
     crouch: { frames: 2, fps: 12, loop: false },
     ...COMBAT_ANIMATIONS,
+    attack_redemoinho: { frames: 3, fps: 12, loop: false },
+    attack_sumico: { frames: 3, fps: 10, loop: false },
   }),
   // Sobrescritas opcionais dos golpes básicos (ver BASIC_MOVES em config.js).
   moves: Object.freeze({}),
+  // Golpes especiais acionados por sequência no inputBuffer.
+  specials: Object.freeze([
+    SPECIAL_MOVES.redemoinho,
+    SPECIAL_MOVES.sumico,
+  ]),
 });

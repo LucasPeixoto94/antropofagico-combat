@@ -1,8 +1,10 @@
 // Lutador genérico + máquina de estados.
-// Os dados (velocidades, animações) vêm de characters/*.js; aqui não há nada específico de personagem.
+// Os dados (velocidades, animações, especiais) vêm de characters/*.js; aqui não há nada específico de personagem.
 import {
   GRAVITY,
   GROUND_Y,
+  STAGE_WIDTH,
+  STAGE_EDGE_MARGIN,
   BACK_WALK_MULTIPLIER,
   JUMP_DRIFT,
   FACING_DEADZONE,
@@ -19,6 +21,7 @@ import {
   PUSHBOX_WIDTH,
 } from '../config.js';
 import { Animation, drawSprite } from '../render/sprites.js';
+import { InputBuffer } from '../core/inputBuffer.js';
 import { getMove, pickMove, movePhase, moveDuration, phaseFrameIndex } from './moves.js';
 import { worldBox } from './collision.js';
 
@@ -36,6 +39,8 @@ export const FighterState = Object.freeze({
 });
 const S = FighterState;
 
+const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+
 export class Fighter {
   /**
    * @param {Object} o
@@ -43,11 +48,13 @@ export class Fighter {
    * @param {import('../core/assets.js').Assets} o.assets
    * @param {number} o.x
    * @param {1|-1} o.facing     1 = olhando para a direita
+   * @param {(fighter: Fighter, move: Object) => void} [o.onSpawnProjectile]
    */
-  constructor({ def, assets, x, facing }) {
+  constructor({ def, assets, x, facing, onSpawnProjectile = null }) {
     this.def = def;
     this.stats = def.stats;
     this.assets = assets;
+    this.onSpawnProjectile = onSpawnProjectile;
     this.x = x;
     this.y = GROUND_Y;
     this.vx = 0;
@@ -62,10 +69,14 @@ export class Fighter {
     this.stateFrame = 0;
     this.anim = null;
 
+    /** Buffer de sequências de inputs deste lutador. */
+    this.inputBuffer = new InputBuffer();
+
     /** Golpe atual (estado ATTACK) e controle de frame data. */
     this.move = null;
     this.moveFrame = 0;
     this.hasHit = false;
+    this.effectDone = false;
     /** Frames restantes de hitstun / blockstun / knockdown no chão. */
     this.stun = 0;
     this.crouchBlock = false;
@@ -101,9 +112,17 @@ export class Fighter {
    * @param {Fighter} opponent
    */
   update(actions, opponent) {
+    // Em estados livres no chão, atualiza a direção antes de gravar no buffer
+    // para que forward/back reflita o lado atual do oponente.
+    const freeGround = !this.airborne && ![S.ATTACK, S.HITSTUN, S.KNOCKDOWN, S.VICTORY].includes(this.state);
+    if (freeGround && !(this.state === S.BLOCK && this.stun > 0)) {
+      this.faceTowards(opponent);
+    }
+    this.inputBuffer.record(actions, this.facing);
+
     switch (this.state) {
       case S.ATTACK:
-        this._updateAttack();
+        this._updateAttack(opponent);
         break;
       case S.HITSTUN:
         if (--this.stun <= 0) this.setState(S.IDLE);
@@ -149,7 +168,12 @@ export class Fighter {
 
     this.faceTowards(opponent);
 
-    const id = pickMove(actions, { air: false, crouch: actions.down });
+    const id = pickMove(actions, {
+      air: false,
+      crouch: actions.down,
+      buffer: this.inputBuffer,
+      specials: this.def.specials,
+    });
     if (id) {
       this._startAttack(id);
       return;
@@ -186,24 +210,61 @@ export class Fighter {
   }
 
   // ---------------------------------------------------------------------
-  // Golpes
+  // Golpes (básicos e especiais)
   // ---------------------------------------------------------------------
   _startAttack(id) {
     const move = getMove(this.def, id);
     this.move = move;
     this.moveFrame = 0;
     this.hasHit = false;
-    if (move.stance !== 'air') this.vx = 0; // golpes no chão não deslizam
+    this.effectDone = false;
+    if (move.stance !== 'air') this.vx = 0; // golpes no chão começam parados
     this.setState(S.ATTACK, `attack_${id}`);
   }
 
-  _updateAttack() {
+  _updateAttack(opponent) {
+    const m = this.move;
     this.moveFrame++;
-    if (movePhase(this.move, this.moveFrame) !== 'done') return;
-    const air = this.move.stance === 'air';
-    this.move = null;
-    // No ar, volta ao pulo (o pouso é tratado na física); no chão, volta ao neutro.
-    this.setState(air ? S.JUMP : S.IDLE);
+    const phase = movePhase(m, this.moveFrame);
+
+    if (phase === 'done') {
+      const air = m.stance === 'air';
+      this.vx = 0;
+      this.move = null;
+      // No ar, volta ao pulo (o pouso é tratado na física); no chão, volta ao neutro.
+      this.setState(air ? S.JUMP : S.IDLE);
+      if (!air && opponent) this.faceTowards(opponent);
+      return;
+    }
+
+    // Efeitos de golpes especiais durante a fase active
+    if (m.kind === 'dash') {
+      this.vx = phase === 'active' ? this.facing * (m.distance / m.active) : 0;
+    } else if (phase === 'active' && !this.effectDone) {
+      this.effectDone = true;
+      if (m.kind === 'teleport' && opponent) {
+        this._applyTeleport(m, opponent);
+      } else if (m.kind === 'projectile') {
+        this.onSpawnProjectile?.(this, m);
+      }
+    }
+  }
+
+  /** Sumiço: reaparece atrás do oponente (ou na frente se o oponente estiver colado na parede). */
+  _applyTeleport(move, opponent) {
+    const offset = move.teleportBehindOffset ?? 44;
+    const minX = STAGE_EDGE_MARGIN;
+    const maxX = STAGE_WIDTH - STAGE_EDGE_MARGIN;
+    // "Atrás" do oponente = na direção da qual o oponente está de costas, ou do lado oposto ao Saci.
+    const sideFromSaci = Math.sign(opponent.x - this.x) || this.facing;
+    let targetX = opponent.x + sideFromSaci * offset;
+    if (targetX < minX || targetX > maxX) {
+      targetX = opponent.x - sideFromSaci * offset;
+    }
+    this.x = clamp(targetX, minX, maxX);
+    this.vx = 0;
+    this.kb = 0;
+    this.faceTowards(opponent);
   }
 
   /** Fase atual do golpe ('startup' | 'active' | 'recovery') ou null fora de golpe. */
@@ -213,7 +274,7 @@ export class Fighter {
 
   /** Hitbox em coordenadas de mundo, apenas nos frames active. */
   currentHitbox() {
-    if (this.phase !== 'active') return null;
+    if (this.phase !== 'active' || !this.move?.hitbox) return null;
     return worldBox(this.x, this.y, this.facing, this.move.hitbox, this.stats.height / REF_HEIGHT);
   }
 
@@ -229,16 +290,18 @@ export class Fighter {
     return h;
   }
 
-  /** Hurtbox em coordenadas de mundo; null quando não pode ser acertado (derrubado). */
+  /** Hurtbox em coordenadas de mundo; null quando não pode ser acertado (derrubado ou desaparecido no Sumiço). */
   hurtbox() {
     if (this.state === S.KNOCKDOWN) return null;
+    if (this.state === S.ATTACK && this.move?.kind === 'teleport' && this.phase === 'active') return null;
     const hh = this._bodyHeight();
     return worldBox(this.x, this.y, this.facing, { x: -HURTBOX_WIDTH / 2, y: -hh, w: HURTBOX_WIDTH, h: hh });
   }
 
-  /** Pushbox: impede que os lutadores se atravessem; null quando não empurra (no ar ou derrubado). */
+  /** Pushbox: impede que os lutadores se atravessem; null quando não empurra (no ar, derrubado ou teleportando). */
   pushbox() {
     if (this.state === S.KNOCKDOWN || this.airborne) return null;
+    if (this.state === S.ATTACK && this.move?.kind === 'teleport' && this.phase !== 'recovery') return null;
     const hh = this._bodyHeight();
     return worldBox(this.x, this.y, this.facing, { x: -PUSHBOX_WIDTH / 2, y: -hh, w: PUSHBOX_WIDTH, h: hh });
   }

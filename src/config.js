@@ -145,7 +145,64 @@ export const ROUND_END_WINNER_FRAMES = 80;
 /** Espera na tela de vitória antes de aceitar ENTER (evita pular sem querer). */
 export const MATCH_END_INPUT_DELAY = 60;
 
-const move = (m) => Object.freeze({ ...m, hitbox: Object.freeze(m.hitbox) });
+const move = (m) => Object.freeze({ ...m, hitbox: m.hitbox ? Object.freeze(m.hitbox) : null });
+
+// ---- Input buffer e sequências ----
+/** Tamanho do histórico de inputs por jogador (em frames). */
+export const INPUT_BUFFER_FRAMES = 30;
+/** Janela máxima padrão (em frames) para completar a sequência de um especial. */
+export const INPUT_WINDOW = 20;
+
+/**
+ * Golpes especiais (balanceamento centralizado; referenciados em characters/*.js).
+ * - kind 'dash': avança durante active (distance px distribuídos nos frames active)
+ * - kind 'teleport': no início de active, reaparece atrás do oponente (offset teleportBehindOffset)
+ * - kind 'projectile': no 1º frame de active, dispara um projétil
+ */
+export const SPECIAL_MOVES = Object.freeze({
+  // Saci: Redemoinho (↓ → + soco) — investida giratória ~90 px
+  redemoinho: move({
+    id: 'redemoinho', name: 'REDEMOINHO', stance: 'stand', special: true, kind: 'dash',
+    seq: Object.freeze(['down', 'forward', 'punch']), window: INPUT_WINDOW,
+    startup: 8, active: 15, recovery: 22, distance: 90,
+    damage: 12, hitstun: 22, blockstun: 12, knockdown: true,
+    hitbox: { x: -10, y: -78, w: 48, h: 68 },
+  }),
+  // Saci: Sumiço (↓ ← + chute) — reaparece atrás do oponente
+  sumico: move({
+    id: 'sumico', name: 'SUMIÇO', stance: 'stand', special: true, kind: 'teleport',
+    seq: Object.freeze(['down', 'back', 'kick']), window: INPUT_WINDOW,
+    startup: 12, active: 2, recovery: 16, teleportBehindOffset: 44,
+    damage: 0, hitstun: 0, blockstun: 0, hitbox: null,
+  }),
+  // Curupira: Fogo do Cabelo (↓ → + soco) — projétil a 4 px/frame
+  fogo_do_cabelo: move({
+    id: 'fogo_do_cabelo', name: 'FOGO DO CABELO', stance: 'stand', special: true, kind: 'projectile',
+    seq: Object.freeze(['down', 'forward', 'punch']), window: INPUT_WINDOW,
+    startup: 14, active: 2, recovery: 24,
+    damage: 10, hitstun: 18, blockstun: 11, hitbox: null,
+  }),
+  // Curupira: Pegada Invertida (↓ ← + chute) — desliza ~70 px e acerta à frente
+  pegada_invertida: move({
+    id: 'pegada_invertida', name: 'PEGADA INVERTIDA', stance: 'stand', special: true, kind: 'dash',
+    seq: Object.freeze(['down', 'back', 'kick']), window: INPUT_WINDOW,
+    startup: 10, active: 12, recovery: 20, distance: 70,
+    damage: 11, hitstun: 20, blockstun: 12, knockdown: true,
+    hitbox: { x: 8, y: -32, w: 46, h: 28 },
+  }),
+});
+
+// ---- Projéteis (Fogo do Cabelo) ----
+export const PROJECTILE_SPEED = 4;
+export const PROJECTILE_DAMAGE = 10;
+export const PROJECTILE_HITSTUN = 18;
+export const PROJECTILE_BLOCKSTUN = 11;
+export const PROJECTILE_WIDTH = 22;
+export const PROJECTILE_HEIGHT = 14;
+export const PROJECTILE_SPAWN_X = 26;
+export const PROJECTILE_SPAWN_Y = -66;
+export const PROJECTILE_MAX_LIFETIME = 180;
+export const PROJECTILE_MARGIN = 40;
 
 /**
  * Golpes básicos (ponto de partida; ajustar jogando). Personagens podem sobrescrever

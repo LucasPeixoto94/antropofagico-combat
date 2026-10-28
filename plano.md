@@ -175,6 +175,7 @@ Estados: `idle`, `walk_fwd`, `walk_back`, `jump`, `crouch`, `block`, `attack`, `
 | Fases do round (`ROUND_INTRO`, `ROUND_END`, `MATCH_END`) vivem dentro de `FIGHTING`, em `fight/round.js` (classe `Match`, sem DOM); `PAUSED` é um estado do jogo que retoma com `setState(FIGHTING, { resume: true })` | Lutadores, câmera e HUD continuam vivos entre as fases sem passar objetos entre estados; a lógica de rounds fica pura e testável com `node:test` | Um estado do jogo por fase (exigiria compartilhar a partida entre 4 estados) |
 | Tempo esgotado decide por **porcentagem** de vida; empate (vida igual ou duplo K.O.) não pontua, com limite de `MAX_ROUNDS = 5` (depois decide pelo placar ou empata a partida) | Saci (90) e Curupira (110) têm vidas máximas diferentes; o limite evita partida infinita | Vida absoluta (favorece o Curupira); empate dando ponto aos dois |
 | Teste E2E (`tests/e2e.mjs`) dirige Edge/Chrome headless pelo DevTools Protocol com o `WebSocket` nativo do Node, sem dependências; desliga o loop e avança ticks manualmente | Testa a partida completa no navegador real, de forma determinística, sem `npm install` | Puppeteer/Playwright (dependências pesadas) |
+| Frame data dos especiais em `config.js` (`SPECIAL_MOVES`), referenciados em `characters/*.js` (`specials`) e executados de forma genérica por `kind` (`dash`, `teleport`, `projectile`); projéteis que se chocam se anulam | Mantém todos os números de balanceamento em `config.js` e zero código específico de personagem em `fighter.js` | Lógica por nome do especial dentro de `fighter.js` |
 
 Observação: módulos ES não funcionam abrindo `index.html` direto (`file://`); usar `npx serve` ou `python -m http.server`.
 
@@ -256,11 +257,11 @@ Regras para **todas** as etapas: rodar e testar no navegador, atualizar os check
 
 ### Etapa 7 — Input buffer e especiais
 **Objetivo:** os 4 especiais funcionando.
-- [ ] `core/inputBuffer.js` com histórico e reconhecimento de sequências
-- [ ] `tests/inputBuffer.test.mjs` cobrindo ↓→ P, ↓← K, espelhamento, janela e ruído
-- [ ] Saci: **Redemoinho** (↓ → + soco) e **Sumiço** (↓ ← + chute)
-- [ ] Curupira: **Fogo do Cabelo** (↓ → + soco, com `fight/projectile.js`) e **Pegada Invertida** (↓ ← + chute)
-- [ ] Debug mostra o buffer e o especial reconhecido
+- [x] `core/inputBuffer.js` com histórico e reconhecimento de sequências
+- [x] `tests/inputBuffer.test.mjs` cobrindo ↓→ P, ↓← K, espelhamento, janela e ruído
+- [x] Saci: **Redemoinho** (↓ → + soco) e **Sumiço** (↓ ← + chute)
+- [x] Curupira: **Fogo do Cabelo** (↓ → + soco, com `fight/projectile.js`) e **Pegada Invertida** (↓ ← + chute)
+- [x] Debug mostra o buffer e o especial reconhecido
 
 **Arquivos:** `core/inputBuffer.js`, `fight/projectile.js`, `fight/moves.js`, `characters/*.js`, `tests/inputBuffer.test.mjs`
 **Aceite:** `node --test tests/` passa; em jogo, cada especial sai de forma consistente dos dois lados da tela; especiais têm recuperação e custo de risco (punível se errar).

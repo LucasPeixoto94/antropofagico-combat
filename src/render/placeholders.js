@@ -69,7 +69,11 @@ const r = (x, y, w, h, c) => ({ x: Math.round(x), y: Math.round(y), w: Math.roun
 
 /** Abrevia nomes longos de estado para o rótulo caber no frame (ex.: attack_crouch_kick -> atk cr_kick). */
 function shortLabel(state) {
-  return state.replace(/^attack_/, 'atk ').replace('crouch', 'cr');
+  return state
+    .replace(/^attack_/, 'atk ')
+    .replace('crouch', 'cr')
+    .replace('fogo_do_cabelo', 'fogo')
+    .replace('pegada_invertida', 'pegada');
 }
 
 /** Pose base usada por cada pose de combate (as demais poses são a própria base). */
@@ -79,6 +83,10 @@ const POSE_BASE = {
   attack_crouch_punch: 'crouch',
   attack_crouch_kick: 'crouch',
   attack_air: 'jump',
+  attack_redemoinho: 'idle',
+  attack_sumico: 'crouch',
+  attack_fogo_do_cabelo: 'idle',
+  attack_pegada_invertida: 'crouch',
   block: 'idle',
   crouch_block: 'crouch',
   hitstun: 'idle',
@@ -109,6 +117,40 @@ function buildFigure(kind, h, frame, frames, pose = 'idle') {
       break;
     case 'attack_air':
       rects.push(r(4, -h * 0.35, reach([10, 44, 16]), 10, shade));
+      break;
+    case 'attack_redemoinho':
+      // Anéis de vento girando ao redor do Saci.
+      rects.push(
+        r(-20, -h * 0.72, reach([24, 52, 28]), 8, P.whirlwind),
+        r(-16, -h * 0.48, reach([20, 48, 24]), 8, P.whirlwindShade),
+        r(-12, -h * 0.24, reach([16, 40, 20]), 8, P.whirlwind),
+      );
+      break;
+    case 'attack_sumico':
+      // Nuvem de fumaça/redemoinho cobrindo o corpo durante o teleporte.
+      if (frame === 1) {
+        rects = [
+          r(-16, -h * 0.55, 32, 10, P.whirlwind),
+          r(-22, -h * 0.35, 44, 10, P.whirlwindShade),
+          r(-14, -h * 0.18, 28, 8, P.whirlwind),
+        ];
+      } else {
+        rects.push(r(-18, -12, 36, 8, P.whirlwindShade));
+      }
+      break;
+    case 'attack_fogo_do_cabelo':
+      // Braços lançando chama à frente.
+      rects.push(
+        r(8, -h * 0.68, reach([12, 26, 14]), 8, skin),
+        r(18, -h * 0.72, reach([8, 22, 6]), 12, frame === 1 ? P.curupiraHairHot : P.curupiraHair),
+      );
+      break;
+    case 'attack_pegada_invertida':
+      // Rasteira deslizando baixa com rastro de folha/chama.
+      rects.push(
+        r(6, -18, reach([14, 48, 20]), 12, shade),
+        r(-20, -6, reach([10, 28, 12]), 6, P.curupiraHair),
+      );
       break;
     case 'block':
       rects.push(r(10, -h * 0.8, 8, h * 0.3, shade));
