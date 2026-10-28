@@ -55,4 +55,16 @@ export const PALETTE = Object.freeze({
   hurtbox: '#3dff7a',
   hitbox: '#ff3b3b',
   hitboxFill: 'rgba(255, 59, 59, 0.35)',
+  pushbox: '#38bdf8',
+
+  // HUD
+  hudBarBg: '#1f1315',
+  hudBarBorder: '#3e2c2f',
+  hudHealthGreen: '#22c55e',
+  hudHealthYellow: '#eab308',
+  hudHealthRed: '#ef4444',
+  hudDamageTrail: '#f97316',
+  hudText: '#ffffff',
+  hudKoText: '#ff3333',
+  hudKoGlow: 'rgba(255, 50, 50, 0.8)',
 });

@@ -24,3 +24,37 @@ export function worldBox(x, y, facing, local, yScale = 1) {
 export function overlaps(a, b) {
   return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
 }
+
+/**
+ * Resolve a colisão entre as pushboxes dos dois lutadores no chão.
+ * Se um lutador estiver encurralado na borda do cenário, o outro absorve o empurrão inteiro.
+ * @param {import('./fighter.js').Fighter} a
+ * @param {import('./fighter.js').Fighter} b
+ * @param {number} stageMin margem esquerda do cenário
+ * @param {number} stageMax margem direita do cenário
+ */
+export function resolvePushbox(a, b, stageMin, stageMax) {
+  const pA = a.pushbox();
+  const pB = b.pushbox();
+  if (!pA || !pB || !overlaps(pA, pB)) return;
+
+  const left = a.x <= b.x ? a : b;
+  const right = left === a ? b : a;
+  const pbLeft = left === a ? pA : pB;
+  const pbRight = left === a ? pB : pA;
+
+  const overlap = pbLeft.x + pbLeft.w - pbRight.x;
+  if (overlap <= 0) return;
+
+  const leftAgainstWall = left.x <= stageMin + 2;
+  const rightAgainstWall = right.x >= stageMax - 2;
+
+  if (leftAgainstWall && !rightAgainstWall) {
+    right.x += overlap;
+  } else if (rightAgainstWall && !leftAgainstWall) {
+    left.x -= overlap;
+  } else {
+    left.x -= overlap / 2;
+    right.x += overlap / 2;
+  }
+}

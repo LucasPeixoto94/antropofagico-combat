@@ -23,7 +23,8 @@ Depois abra <http://localhost:8000>.
 |---|---|
 | ENTER | Iniciar modo de treino (na tela de título) |
 | ESC | Voltar para o menu principal |
-| F1 | Liga/desliga debug: estado, frames do golpe, hp, hurtbox (verde) e hitbox (vermelha, só nos frames *active*) |
+| ENTER (após K.O.) | Reiniciar a luta |
+| F1 | Liga/desliga debug: estado, frames do golpe, hp, hurtbox (verde), pushbox (azul) e hitbox (vermelha, só nos frames *active*) |
 
 ### Jogador 1 (Saci)
 | Tecla | Ação |
@@ -43,6 +44,8 @@ Depois abra <http://localhost:8000>.
 | L (ou Num 3) | Defesa (segurar) |
 
 Golpes mudam com a posição: em pé, **agachado** (segurando ↓) e **no ar** (durante o pulo). O chute agachado derruba (rasteira).
+
+Cada lutador tem uma barra de vida no topo da tela (Saci 90, Curupira 110). Ao zerar, o lutador cai, fica no chão (K.O.) e os controles travam. Dano em defesa (chip) nunca nocauteia.
 
 ## Sprites: trocar placeholders por PNG
 

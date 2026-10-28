@@ -40,6 +40,9 @@ export function drawFighterBoxes(ctx, fighters, camX) {
     ctx.fillRect(px - 3, py, 7, 1);
     ctx.fillRect(px, py - 3, 1, 7);
 
+    const push = f.pushbox();
+    if (push) outlineBox(ctx, { ...push, x: push.x - camX }, P.pushbox);
+
     const hurt = f.hurtbox();
     if (hurt) outlineBox(ctx, { ...hurt, x: hurt.x - camX }, P.hurtbox);
 

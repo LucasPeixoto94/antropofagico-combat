@@ -1,6 +1,6 @@
-// Estado FIGHTING (Etapa 4: modo treino com golpes).
-// Saci (P1) vs Curupira como boneco de treino — fica parado, a menos que o P2 use as teclas.
-// Rounds, vida na tela e pausa entram nas Etapas 5–6.
+// Estado FIGHTING (Etapa 5: Saci vs Curupira, vida, pushbox e KO).
+// P2 (Curupira) fica parado, a menos que o segundo jogador use as teclas.
+// Rounds, timer e pausa entram na Etapa 6; por ora, após o KO, ENTER reinicia a luta.
 import {
   INTERNAL_WIDTH as W,
   INTERNAL_HEIGHT as H,
@@ -18,10 +18,11 @@ import { PALETTE as P } from '../palette.js';
 import { GameState } from '../core/gameState.js';
 import { Camera } from '../core/camera.js';
 import { Fighter } from '../fight/fighter.js';
-import { overlaps } from '../fight/collision.js';
+import { overlaps, resolvePushbox } from '../fight/collision.js';
 import { CHARACTERS } from '../characters/index.js';
 import { FONT } from '../render/text.js';
 import { drawFighterBoxes } from '../debug/debugOverlay.js';
+import { Hud } from '../render/hud.js';
 
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
 
@@ -60,6 +61,7 @@ export class FightState {
     this.camera.snap(this.p1, this.p2);
     this.hitstop = 0;
     this.lastEvent = '-';
+    this.hud = new Hud();
   }
 
   update() {
@@ -70,18 +72,27 @@ export class FightState {
       return;
     }
 
+    // Se houve KO, ENTER reinicia a luta
+    if ((this.p1.ko || this.p2.ko) && g.input.pressedAny(CONTROLS.confirm)) {
+      this.enter();
+      return;
+    }
+
     if (this.hitstop > 0) {
       // Hitstop: lógica dos lutadores congelada; câmera e tremor de tela continuam.
       this.hitstop--;
       this.camera.update(this.p1, this.p2);
+      this.hud.update(this.p1, this.p2);
       return;
     }
 
     this.p1.update(g.input.actions(0), this.p2);
     this.p2.update(g.input.actions(1), this.p1);
     this._resolveHits();
+    resolvePushbox(this.p1, this.p2, STAGE_EDGE_MARGIN, STAGE_WIDTH - STAGE_EDGE_MARGIN);
     constrainFighters(this.p1, this.p2);
     this.camera.update(this.p1, this.p2);
+    this.hud.update(this.p1, this.p2);
   }
 
   /** Detecta acertos deste tick. Os dois golpes são avaliados antes de aplicar qualquer um (trade). */
@@ -117,11 +128,17 @@ export class FightState {
 
     if (this.game.debug) drawFighterBoxes(ctx, [this.p1, this.p2], camX);
 
+    // HUD (barras de vida, nomes e KO) desenhada por cima do jogo
+    this.hud.render(ctx, this.p1, this.p2);
+
     ctx.font = `8px ${FONT}`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'top';
     ctx.fillStyle = P.hint;
-    ctx.fillText('P1 WASD+F/G/H  P2 SETAS+J/K/L  ESC', W / 2, H - 12);
+    const footerText = (this.p1.ko || this.p2.ko)
+      ? 'K.O.!  PRESSIONE ENTER PARA REINICIAR  ESC: MENU'
+      : 'P1 WASD+F/G/H  P2 SETAS+J/K/L  ESC';
+    ctx.fillText(footerText, W / 2, H - 12);
   }
 
   debugLines() {

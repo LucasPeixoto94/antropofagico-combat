@@ -16,6 +16,7 @@ import {
   BLOCK_PUSHBACK,
   HIT_KNOCKBACK,
   AIR_HIT_POP,
+  PUSHBOX_WIDTH,
 } from '../config.js';
 import { Animation, drawSprite } from '../render/sprites.js';
 import { getMove, pickMove, movePhase, moveDuration, phaseFrameIndex } from './moves.js';
@@ -68,6 +69,8 @@ export class Fighter {
     this.stun = 0;
     this.crouchBlock = false;
     this.lying = false;
+    /** Derrotado: cai, fica no chão e os controles travam (até reiniciar). */
+    this.ko = false;
 
     this.setState(S.IDLE);
   }
@@ -210,18 +213,30 @@ export class Fighter {
     return worldBox(this.x, this.y, this.facing, this.move.hitbox, this.stats.height / REF_HEIGHT);
   }
 
-  /** Hurtbox em coordenadas de mundo; null quando não pode ser acertado (no chão, derrubado). */
-  hurtbox() {
-    if (this.state === S.KNOCKDOWN) return null;
+  /** Altura atual do corpo (varia com agachar e pular). */
+  _bodyHeight() {
     const h = this.stats.height;
     const crouching =
       this.state === S.CROUCH ||
       (this.state === S.BLOCK && this.crouchBlock) ||
-      (this.state === S.ATTACK && this.move.stance === 'crouch');
-    let hh = h;
-    if (crouching) hh = h * CROUCH_HEIGHT_RATIO;
-    else if (this.airborne) hh = h * AIR_HURTBOX_RATIO;
+      (this.state === S.ATTACK && this.move?.stance === 'crouch');
+    if (crouching) return h * CROUCH_HEIGHT_RATIO;
+    if (this.airborne) return h * AIR_HURTBOX_RATIO;
+    return h;
+  }
+
+  /** Hurtbox em coordenadas de mundo; null quando não pode ser acertado (derrubado). */
+  hurtbox() {
+    if (this.state === S.KNOCKDOWN) return null;
+    const hh = this._bodyHeight();
     return worldBox(this.x, this.y, this.facing, { x: -HURTBOX_WIDTH / 2, y: -hh, w: HURTBOX_WIDTH, h: hh });
+  }
+
+  /** Pushbox: impede que os lutadores se atravessem; null quando não empurra (no ar ou derrubado). */
+  pushbox() {
+    if (this.state === S.KNOCKDOWN || this.airborne) return null;
+    const hh = this._bodyHeight();
+    return worldBox(this.x, this.y, this.facing, { x: -PUSHBOX_WIDTH / 2, y: -hh, w: PUSHBOX_WIDTH, h: hh });
   }
 
   /**
@@ -236,7 +251,8 @@ export class Fighter {
     this.vx = 0;
 
     if (this.state === S.BLOCK) {
-      this.health = Math.max(0, this.health - Math.max(1, Math.round(move.damage * BLOCK_DAMAGE_MULTIPLIER)));
+      // Dano de chip nunca mata: no mínimo sobra 1 de vida.
+      this.health = Math.max(1, this.health - Math.max(1, Math.round(move.damage * BLOCK_DAMAGE_MULTIPLIER)));
       this.stun = move.blockstun;
       this.kb = dir * BLOCK_PUSHBACK;
       return 'block';
@@ -244,9 +260,11 @@ export class Fighter {
 
     this.health = Math.max(0, this.health - move.damage);
     this.kb = dir * HIT_KNOCKBACK;
-    if (this.airborne || move.knockdown) {
+    const ko = this.health <= 0;
+    if (this.airborne || move.knockdown || ko) {
       if (this.airborne) this.vy = AIR_HIT_POP;
       this.lying = false;
+      this.ko = ko;
       this.setState(S.KNOCKDOWN);
     } else {
       this.stun = move.hitstun;
@@ -261,6 +279,7 @@ export class Fighter {
       this.lying = true;
       this.stun = KNOCKDOWN_FRAMES;
     }
+    if (this.ko) return; // derrotado: não levanta
     if (--this.stun <= 0) {
       this.lying = false;
       this.setState(S.IDLE);
@@ -296,6 +315,9 @@ export class Fighter {
       // Frame da animação segue a fase do golpe (preparo, golpe, recuperação).
       const phase = this.phase === 'done' ? 'recovery' : this.phase;
       drawSprite(ctx, this.anim.sprite, phaseFrameIndex(phase), x, this.y, this.facing < 0);
+    } else if (this.state === S.KNOCKDOWN) {
+      // Frame 0 = caindo (no ar), frame 1 = deitado.
+      drawSprite(ctx, this.anim.sprite, this.airborne ? 0 : 1, x, this.y, this.facing < 0);
     } else {
       this.anim.draw(ctx, x, this.y, this.facing < 0);
     }
@@ -310,6 +332,6 @@ export class Fighter {
     } else if (this.stun > 0) {
       extra = ` stun${this.stun}`;
     }
-    return `${this.state}${extra} x${Math.round(this.x)} y${Math.round(this.y)} f${f} hp${this.health}`;
+    return `${this.state}${this.ko ? ' KO' : ''}${extra} x${Math.round(this.x)} y${Math.round(this.y)} f${f} hp${this.health}`;
   }
 }

@@ -102,10 +102,18 @@ export const HIT_SHAKE_FRAMES = 6;
 
 // ---- Caixas de colisão (AABB, relativas aos pés, olhando para a direita) ----
 export const HURTBOX_WIDTH = 28;
+export const PUSHBOX_WIDTH = 26;
 /** Altura da hurtbox no ar, em relação à altura em pé. */
 export const AIR_HURTBOX_RATIO = 0.8;
 /** Altura de referência das hitboxes dos golpes; escalam com a altura do personagem. */
 export const REF_HEIGHT = 100;
+
+// ---- HUD ----
+export const HUD_BAR_WIDTH = 180;
+export const HUD_BAR_HEIGHT = 12;
+export const HUD_BAR_MARGIN_X = 20;
+export const HUD_BAR_MARGIN_Y = 12;
+export const HUD_DAMAGE_TRAIL_SPEED = 0.05;
 
 const move = (m) => Object.freeze({ ...m, hitbox: Object.freeze(m.hitbox) });
 
