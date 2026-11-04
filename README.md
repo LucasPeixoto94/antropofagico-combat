@@ -80,4 +80,13 @@ assets/characters/<personagem>/<estado>.json   (opcional)
 - JSON opcional: `{ "frameWidth": 128, "frameHeight": 128, "frames": 6, "fps": 12, "loop": true, "pivot": { "x": 64, "y": 124 } }`
 - Exemplo pronto: `assets/_exemplo/idle_exemplo.png` (2 frames).
 
+### Camadas do cenário (Mata Atlântica)
+Para substituir qualquer camada procedural por arte própria, coloque o PNG em:
+
+```
+assets/stages/mataAtlantica/<camada>.png
+```
+
+Camadas disponíveis (do fundo para a frente): `sky`, `mountains`, `far_trees`, `waterfall`, `near_trees`, `ground`, `foreground` (altura recomendada: `270 px`).
+
 > Os erros **404** no console para arquivos em `assets/` são esperados: indicam que o jogo procurou o PNG, não achou e usou o placeholder.

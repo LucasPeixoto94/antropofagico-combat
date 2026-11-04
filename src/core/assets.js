@@ -44,6 +44,26 @@ export class Assets {
   constructor() {
     /** @type {Map<string, Sprite>} */
     this.sprites = new Map();
+    /** Imagens avulsas opcionais (ex.: camadas de cenário). Só existem se o PNG foi encontrado. */
+    /** @type {Map<string, HTMLImageElement>} */
+    this.images = new Map();
+  }
+
+  /**
+   * Tenta carregar PNGs opcionais; os que não existirem são simplesmente ignorados
+   * (quem usa cai no desenho procedural).
+   * @param {Array<{key:string, url:string}>} list
+   */
+  async loadImages(list) {
+    await Promise.all(list.map(async ({ key, url }) => {
+      const img = await loadImage(url).catch(() => null);
+      if (img) this.images.set(key, img);
+    }));
+  }
+
+  /** @returns {HTMLImageElement|null} */
+  getImage(key) {
+    return this.images.get(key) ?? null;
   }
 
   /**
@@ -99,6 +119,6 @@ export class Assets {
       if (s.source === 'png') png++;
       else placeholder++;
     }
-    return { png, placeholder };
+    return { png, placeholder, images: this.images.size };
   }
 }

@@ -10,6 +10,7 @@ import {
   CHAR_PIVOT,
 } from './config.js';
 import { CHARACTERS } from './characters/index.js';
+import { MATA_ATLANTICA, stageImageManifest } from './stages/mataAtlantica.js';
 
 async function waitForFont() {
   if (!document.fonts || !document.fonts.load) return;
@@ -47,7 +48,10 @@ async function boot() {
   await waitForFont(); // antes dos placeholders, que escrevem texto
   const renderer = new Renderer(canvas);
   const assets = new Assets();
-  await assets.loadAll(spriteManifest());
+  await Promise.all([
+    assets.loadAll(spriteManifest()),
+    assets.loadImages(stageImageManifest(MATA_ATLANTICA)),
+  ]);
 
   const game = new Game(renderer, assets);
   const loop = new Loop(game);

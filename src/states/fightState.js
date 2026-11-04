@@ -33,6 +33,8 @@ import { Projectile } from '../fight/projectile.js';
 import { overlaps, resolvePushbox } from '../fight/collision.js';
 import { Match, MatchEvent, RoundPhase, RoundEndReason } from '../fight/round.js';
 import { CHARACTERS } from '../characters/index.js';
+import { MATA_ATLANTICA, Stage } from '../stages/mataAtlantica.js';
+import { drawShadow } from '../render/fx.js';
 import { FONT } from '../render/text.js';
 import { drawFighterBoxes } from '../debug/debugOverlay.js';
 import { Hud } from '../render/hud.js';
@@ -74,6 +76,7 @@ export class FightState {
   /** @param {{resume?: boolean}} [params] resume = voltando da pausa (não reinicia nada) */
   enter(params) {
     if (params?.resume && this.match) return;
+    if (!this.stage) this.stage = new Stage(MATA_ATLANTICA, this.game.assets);
     this.match = new Match();
     this._resetRound();
   }
@@ -188,6 +191,7 @@ export class FightState {
 
   _updateView() {
     this.camera.update(this.p1, this.p2);
+    this.stage.update();
     this.hud.update(this.p1, this.p2);
   }
 
@@ -256,11 +260,20 @@ export class FightState {
 
   render(ctx) {
     const camX = this.camera.renderX;
-    drawTrainingStage(ctx, camX);
+    this.stage.renderBack(ctx, camX);
+
+    // Sombras no chão sob os lutadores (encolhem ao pular).
+    for (const f of this.fighters) {
+      drawShadow(ctx, f.x - camX, GROUND_Y - f.y);
+    }
+
     // Derrotado atrás; vencedor na frente.
     const order = this.p1.ko ? [this.p1, this.p2] : [this.p2, this.p1];
     for (const f of order) f.render(ctx, camX);
     for (const proj of this.projectiles) proj.render(ctx, camX);
+
+    // Folhagem de primeiro plano + folhas/vaga-lumes na frente dos lutadores.
+    this.stage.renderFront(ctx, camX);
 
     if (this.game.debug) drawFighterBoxes(ctx, this.fighters, camX, this.projectiles);
 
@@ -332,45 +345,8 @@ export class FightState {
       `P2 ${this.p2.describe()} ${g.input.describe(1)}`,
       `   buf [${b2.describe()}] esp:${b2.lastSpecial}`,
       `round ${m.round} ${m.phase} f${m.phaseFrame}  timer ${m.timeLeft}  placar ${m.wins[0]}-${m.wins[1]}`,
-      `hitstop ${this.hitstop}  proj ${this.projectiles.length}  ultimo ${this.lastEvent}`,
+      `hitstop ${this.hitstop}  proj ${this.projectiles.length}  part ${this.stage.fx.pool.count}  ultimo ${this.lastEvent}`,
       `cam x${this.camera.renderX}`,
     ];
-  }
-}
-
-/** Cenário provisório de treino (o Mata Atlântica real é a Etapa 8). */
-function drawTrainingStage(ctx, camX) {
-  const sky = ctx.createLinearGradient(0, 0, 0, GROUND_Y);
-  sky.addColorStop(0, P.skyTop);
-  sky.addColorStop(1, P.skyBottom);
-  ctx.fillStyle = sky;
-  ctx.fillRect(0, 0, W, GROUND_Y);
-
-  // Morros ao fundo com parallax lento (só para perceber o movimento da câmera).
-  const farX = Math.round(camX * 0.3);
-  ctx.fillStyle = P.mountain;
-  for (let sx = 0; sx < W; sx += 4) {
-    const wx = sx + farX;
-    const h = 40 + Math.round(18 * Math.sin(wx * 0.012) + 10 * Math.sin(wx * 0.031 + 2));
-    ctx.fillRect(sx, GROUND_Y - h, 4, h);
-  }
-
-  // Chão
-  ctx.fillStyle = P.groundTop;
-  ctx.fillRect(0, GROUND_Y, W, 2);
-  ctx.fillStyle = P.groundDark;
-  ctx.fillRect(0, GROUND_Y + 2, W, H - GROUND_Y - 2);
-
-  // Marcadores a cada 80 px do cenário
-  ctx.font = `8px ${FONT}`;
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'top';
-  for (let wx = 0; wx <= STAGE_WIDTH; wx += 80) {
-    const sx = wx - camX;
-    if (sx < -20 || sx > W + 20) continue;
-    ctx.fillStyle = P.marker;
-    ctx.fillRect(sx, GROUND_Y + 2, 1, 8);
-    ctx.fillStyle = P.markerText;
-    ctx.fillText(String(wx), sx, GROUND_Y + 12);
   }
 }

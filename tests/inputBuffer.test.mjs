@@ -140,3 +140,4 @@ test('describe formata o histórico colapsando repetições consecutivas', () =>
   buf.record(act({ right: true, punch: true }), 1);
   assert.equal(buf.describe(), '↓ ↘ →+P');
 });
+

@@ -221,9 +221,23 @@ async function scenario(h) {
   await check('"FIGHT!" libera a luta e o timer começa em 60', async () => {
     await stepUntil(`${M}.phase === 'FIGHTING'`);
     assert.equal(await js(`${M}.secondsLeft`), 60);
+    const cam0 = await js(`${F}.camera.renderX`);
+    const off0 = await js(`${F}.stage.offsets(${F}.camera.renderX)`);
+    assert.equal(off0.sky, 0);
     const x0 = await js(`${F}.p1.x`);
     await press('KeyD', 20);
     assert.ok((await js(`${F}.p1.x`)) > x0, 'P1 deveria andar para a direita');
+    // Ao mover a câmera, cada camada desliza em velocidade diferente (parallax)
+    await js(`(() => { ${F}.p1.x = 680; ${F}.p2.x = 760; })()`);
+    await step(30);
+    const cam1 = await js(`${F}.camera.renderX`);
+    assert.ok(cam1 > cam0, 'câmera deveria ter se movido');
+    const off1 = await js(`${F}.stage.offsets(${F}.camera.renderX)`);
+    assert.equal(off1.sky, 0);
+    assert.ok(off1.mountains < off1.far_trees && off1.far_trees < off1.waterfall);
+    assert.ok(off1.waterfall < off1.near_trees && off1.near_trees < off1.ground);
+    assert.ok(off1.ground < off1.foreground);
+    await shot('02b-mata-atlantica-parallax');
   });
 
   await check('Especiais Saci: Redemoinho (↓ → + P) e Sumiço (↓ ← + K)', async () => {

@@ -81,7 +81,7 @@ export class Game {
       `ticks/s ${this.loop?.ticksPerSecond ?? 0}  fps ${this.loop?.framesPerSecond ?? 0}`,
       `estado  ${this.stateName}  frame ${this.frame}`,
       `escala  ${scale} dpr ${r.dpr}  tela ${r.canvas.width}x${r.canvas.height}`,
-      `sprites png ${a.png} ph ${a.placeholder}`,
+      `sprites png ${a.png} ph ${a.placeholder}  camadas png ${a.images}`,
       ...(this.state.debugLines?.() ?? []),
     ];
     drawPanel(ctx, lines);

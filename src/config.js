@@ -235,3 +235,37 @@ export const BASIC_MOVES = Object.freeze({
 // ---- Carregamento ----
 /** Tempo máximo esperando a fonte pixel antes de cair no fallback monospace. */
 export const FONT_LOAD_TIMEOUT_MS = 1500;
+
+// ---- Cenário: Mata Atlântica (Etapa 8) ----
+/** Seed do RNG que gera as camadas procedurais e as partículas (determinístico). */
+export const STAGE_SEED = 1500;
+/**
+ * Fator de parallax de cada camada: deslocamento = câmera × fator.
+ * 0 = parada (céu), 1 = acompanha o chão, > 1 = primeiro plano (passa mais rápido).
+ */
+export const STAGE_PARALLAX = Object.freeze({
+  sky: 0,
+  mountains: 0.15,
+  far_trees: 0.35,
+  waterfall: 0.5,
+  near_trees: 0.75,
+  ground: 1,
+  foreground: 1.25,
+});
+/** Velocidade da água da cachoeira (px por tick). */
+export const WATERFALL_SPEED = 2;
+/** Gotas de respingo geradas por tick na base da cachoeira. */
+export const WATERFALL_SPRAY_PER_TICK = 1;
+/** Partículas ambientes. */
+export const LEAF_COUNT = 14;
+export const FIREFLY_COUNT = 16;
+/** Limite total de partículas vivas (folhas + vaga-lumes + respingos); o pool é reciclado. */
+export const MAX_PARTICLES = 80;
+/** Névoa: faixas de "nuvens" baixas que deslizam devagar entre as árvores e o chão. */
+export const MIST_PUFFS = 9;
+export const MIST_ALPHA = 0.1;
+/** Sombra sob os lutadores: largura no chão; encolhe e some com a altura do pulo. */
+export const SHADOW_WIDTH = 34;
+export const SHADOW_MIN_SCALE = 0.45;
+export const SHADOW_FADE_HEIGHT = 140;
+export const SHADOW_ALPHA = 0.4;

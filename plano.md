@@ -176,6 +176,7 @@ Estados: `idle`, `walk_fwd`, `walk_back`, `jump`, `crouch`, `block`, `attack`, `
 | Tempo esgotado decide por **porcentagem** de vida; empate (vida igual ou duplo K.O.) não pontua, com limite de `MAX_ROUNDS = 5` (depois decide pelo placar ou empata a partida) | Saci (90) e Curupira (110) têm vidas máximas diferentes; o limite evita partida infinita | Vida absoluta (favorece o Curupira); empate dando ponto aos dois |
 | Teste E2E (`tests/e2e.mjs`) dirige Edge/Chrome headless pelo DevTools Protocol com o `WebSocket` nativo do Node, sem dependências; desliga o loop e avança ticks manualmente | Testa a partida completa no navegador real, de forma determinística, sem `npm install` | Puppeteer/Playwright (dependências pesadas) |
 | Frame data dos especiais em `config.js` (`SPECIAL_MOVES`), referenciados em `characters/*.js` (`specials`) e executados de forma genérica por `kind` (`dash`, `teleport`, `projectile`); projéteis que se chocam se anulam | Mantém todos os números de balanceamento em `config.js` e zero código específico de personagem em `fighter.js` | Lógica por nome do especial dentro de `fighter.js` |
+| Camadas procedurais da Mata Atlântica (`stages/mataAtlantica.js`) são pré-renderizadas **uma única vez** em canvases offscreen usando RNG com seed (`core/rng.js`); PNG em `assets/stages/mataAtlantica/<camada>.png` substitui a camada | Mantém 60 FPS estável (só `drawImage` por frame), determinismo total e troca de arte sem tocar no código | Redesenhar árvores/montanhas a cada frame |
 
 Observação: módulos ES não funcionam abrindo `index.html` direto (`file://`); usar `npx serve` ou `python -m http.server`.
 
@@ -269,11 +270,11 @@ Regras para **todas** as etapas: rodar e testar no navegador, atualizar os check
 
 ### Etapa 8 — Cenário Mata Atlântica
 **Objetivo:** cenário vivo com parallax e atmosfera.
-- [ ] `stages/mataAtlantica.js` com camadas: céu, montanhas, árvores distantes, cachoeira (animada), árvores próximas, folhagem em primeiro plano
-- [ ] Parallax pela posição da câmera
-- [ ] Partículas ambientes (folhas, vaga-lumes) e névoa
-- [ ] Camadas substituíveis por PNG em `assets/stages/mataAtlantica/`
-- [ ] Sombras sob os lutadores
+- [x] `stages/mataAtlantica.js` com camadas: céu, montanhas, árvores distantes, cachoeira (animada), árvores próximas, folhagem em primeiro plano
+- [x] Parallax pela posição da câmera
+- [x] Partículas ambientes (folhas, vaga-lumes) e névoa
+- [x] Camadas substituíveis por PNG em `assets/stages/mataAtlantica/`
+- [x] Sombras sob os lutadores
 
 **Arquivos:** `stages/mataAtlantica.js`, `render/fx.js`, `core/camera.js`
 **Aceite:** ao lutadores se moverem, o fundo desliza em velocidades diferentes por camada; uma PNG colocada na pasta substitui a camada procedural.

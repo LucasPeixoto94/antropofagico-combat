@@ -106,3 +106,4 @@ export class Projectile {
     ctx.restore();
   }
 }
+
